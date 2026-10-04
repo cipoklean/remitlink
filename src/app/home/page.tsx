@@ -19,6 +19,7 @@ export default function HomePage() {
   const { wallets } = useWallets();
   const [balance, setBalance] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const address = (wallets ?? [])[0]?.address;
 
@@ -76,6 +77,27 @@ export default function HomePage() {
           <p className="mt-2 text-xs text-red-600">Could not read balance: {error}</p>
         ) : null}
       </Card>
+
+      {address ? (
+        <Card className="mt-4">
+          <p className="text-xs text-muted">Your account address</p>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard
+                ?.writeText(address)
+                .then(() => setCopied(true))
+                .catch(() => setCopied(false));
+            }}
+            className="mt-1 w-full break-all text-left font-mono text-xs text-foreground"
+          >
+            {address}
+          </button>
+          <p className="mt-1 text-xs text-muted">
+            {copied ? "Copied ✓" : "Tap to copy"}
+          </p>
+        </Card>
+      ) : null}
 
       <div className="mt-5 flex flex-col gap-3">
         <Link
