@@ -8,9 +8,11 @@ out/
 tsconfig.tsbuildinfo
 
 # Foundry
-lib/
-contracts/out/
-contracts/cache/
+# Use root-anchored paths: a bare `lib/` would also match src/lib and silently
+# exclude the app's chain/corridor config from the repo.
+/lib/
+/contracts/out/
+/contracts/cache/
 
 # Foundry broadcast artifacts
 broadcast/
