@@ -11,16 +11,18 @@ import {MockERC20} from "../test/mocks/MockERC20.sol";
 ///      MONAD_DEPLOYER_PRIVATE_KEY=0x... forge script contracts/script/Deploy.s.sol:Deploy \
 ///        --rpc-url monad_testnet --broadcast --verify
 contract Deploy is Script {
-    function run() external returns (ClaimEscrow escrow) {
+    function run() external returns (ClaimEscrow escrow, MockERC20 token) {
         uint256 pk = vm.envUint("MONAD_DEPLOYER_PRIVATE_KEY");
         address deployer = vm.addr(pk);
 
-        // MOCK test stablecoin (6 decimals, mirrors AUSD) — demo only.
-        // Deploy the real AUSD dependency before the submission; see AGENT.md.
-        MockERC20 token = new MockERC20("USD Coin (MOCK)", "USDC", 6);
-
         vm.startBroadcast(pk);
+
+        // MOCK test stablecoin (6 decimals, mirrors AUSD). AUSD has NO deployment on
+        // Monad testnet (verified: eth_getCode at 0x0000...9012a returns 0x, 2026-10-04),
+        // so per AGENT.md section 4 we use a clearly labeled test ERC-20 instead.
+        token = new MockERC20("USD Coin (MOCK - test only)", "tUSD", 6);
         escrow = new ClaimEscrow();
+
         vm.stopBroadcast();
 
         console.log("Chain ID   :", block.chainid);

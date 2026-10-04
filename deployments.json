@@ -1,0 +1,30 @@
+{
+  "network": "Monad Testnet",
+  "chainId": 10143,
+  "rpc": "https://testnet-rpc.monad.xyz",
+  "explorer": "https://testnet.monadscan.com",
+  "deployedAt": "2026-10-04",
+  "deployer": "0x51b0228bd9B8BF78CEDB11Cb485BA9F80cCf4655",
+  "contracts": {
+    "ClaimEscrow": {
+      "address": "0x75b0c545F1b793200443deB06b202f5709e8eb57",
+      "verified_onchain": true,
+      "note": "Secret + committed-recipient escrow. createClaim / commitRecipient / claim / refund"
+    },
+    "MockStablecoin": {
+      "address": "0x4e932FdbDd875a0610f03E8f9d58ce85CE3b55E0",
+      "symbol": "tUSD",
+      "decimals": 6,
+      "verified_onchain": true,
+      "MOCK": true,
+      "note": "MOCK test stablecoin. AUSD has NO Monad testnet deployment (eth_getCode at 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a returned 0x on 2026-10-04), so per AGENT.md section 4 this labeled test ERC-20 is used instead. Replace before claiming the Agora bounty."
+    }
+  },
+  "superseded": {
+    "ClaimEscrow_0x4232820bf5c0d76ae01f9a913548a4de8623b97b": "First deploy — superseded because the mock token was created outside vm.startBroadcast and so was never actually deployed. Left on-chain unused."
+  },
+  "unverified": [
+    "Contract source verification on the explorer is NOT done — needs a Monadscan/MonadVision API key (owner action).",
+    "Envio indexer not yet configured for ClaimCreated/ClaimClaimed events."
+  ]
+}

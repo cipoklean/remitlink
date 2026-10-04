@@ -11,3 +11,6 @@ tsconfig.tsbuildinfo
 lib/
 contracts/out/
 contracts/cache/
+
+# Foundry broadcast artifacts
+broadcast/
