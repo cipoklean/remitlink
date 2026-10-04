@@ -11,33 +11,68 @@ import { useWallets } from "@privy-io/react-auth";
  *
  * Requires "Sponsor gas fees" enabled for Monad Testnet in the Privy dashboard
  * (Fee sponsorship page). See AGENT.md.
+ *
+ * `NEXT_PUBLIC_SPONSOR_GAS=false` falls back to an ordinary (user-paid) send.
+ * That is the escape hatch: when sponsorship is misconfigured Privy never
+ * resolves the request and the UI hangs forever with nothing broadcast, so we
+ * bound it with a timeout and can turn it off without a code change.
  */
+const SPONSOR = process.env.NEXT_PUBLIC_SPONSOR_GAS === "true";
+const SPONSOR_TIMEOUT_MS = 25_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string) {
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            `${label} timed out after ${ms / 1000}s. Gas sponsorship may not be enabled for Monad Testnet — set NEXT_PUBLIC_SPONSOR_GAS=false to send without it.`,
+          ),
+        ),
+      ms,
+    );
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
 export function useSponsoredSend() {
   const { sendTransaction } = useSendTransaction();
   const { ready, user } = usePrivy();
   const { wallets } = useWallets();
   const address = (wallets ?? [])[0]?.address;
 
+  const sponsorEnabled = SPONSOR;
+
   async function send(args: {
     to: string;
     data: `0x${string}`;
     value?: bigint;
   }): Promise<`0x${string}`> {
-    const { hash } = await sendTransaction(
-      {
-        to: args.to,
-        data: args.data,
-        chainId: CHAIN_ID,
-        value: args.value ?? 0n,
-      },
-      { sponsor: true },
-    );
+    const request = {
+      to: args.to,
+      data: args.data,
+      chainId: CHAIN_ID,
+      value: args.value ?? 0n,
+    };
+    const { hash } = sponsorEnabled
+      ? await withTimeout(
+          sendTransaction(request, { sponsor: true }),
+          SPONSOR_TIMEOUT_MS,
+          "Sponsored transaction",
+        )
+      : await sendTransaction(request);
     return hash;
   }
 
   return {
     ready,
     user,
+    sponsorEnabled,
     address: address as `0x${string}` | undefined,
     hasWallet: Boolean(address),
     send,
