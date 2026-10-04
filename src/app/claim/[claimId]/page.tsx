@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useCallback, useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { useEmbeddedWalletClient } from "@/components/useEmbeddedWalletClient";
+import { useSponsoredSend } from "@/components/useSponsoredSend";
 import {
   Card,
   Loading,
@@ -18,7 +18,6 @@ import {
   ESCROW_ADDRESS,
   STABLECOIN_DECIMALS,
   explorerTx,
-  monadTestnet,
   escrowAbi,
   publicClient,
 } from "@/lib/chain";
@@ -35,9 +34,8 @@ export default function ClaimPage() {
   const router = useRouter();
   const claimId = params?.claimId ?? "";
   const { ready, user } = usePrivy();
-  const { wallets } = useWallets();
-  const walletClient = useEmbeddedWalletClient();
-  const address = (wallets ?? [])[0]?.address;
+  const sponsored = useSponsoredSend();
+  const address = sponsored.address;
 
   const [secret, setSecret] = useState<string | null>(null);
   const [claim, setClaim] = useState<ClaimData | null>(null);
@@ -82,32 +80,25 @@ export default function ClaimPage() {
   }, [claimId, loadClaim]);
 
   async function handleClaim() {
-    if (!walletClient || !address || !secret) return;
+    if (!address || !secret) return;
     setError(null);
     try {
       // Step 1: commit the payout address BEFORE revealing the secret, so a
       // copied secret from the mempool cannot be redirected.
       setStatus("committing");
-      const commitHash = await walletClient.writeContract({
-        address: ESCROW_ADDRESS,
-        abi: escrowAbi,
-        functionName: "commitRecipient",
-        args: [BigInt(claimId), address as `0x${string}`],
-        chain: monadTestnet,
-        account: walletClient.account!,
-      });
+      const commitHash = await sponsored.commitRecipient(
+        BigInt(claimId),
+        address,
+      );
       await publicClient.waitForTransactionReceipt({ hash: commitHash });
 
       // Step 2: reveal the secret to release the funds to the committed address.
       setStatus("claiming");
-      const claimHash = await walletClient.writeContract({
-        address: ESCROW_ADDRESS,
-        abi: escrowAbi,
-        functionName: "claim",
-        args: [BigInt(claimId), BigInt(secret), address as `0x${string}`],
-        chain: monadTestnet,
-        account: walletClient.account!,
-      });
+      const claimHash = await sponsored.claim(
+        BigInt(claimId),
+        BigInt(secret),
+        address,
+      );
       await publicClient.waitForTransactionReceipt({ hash: claimHash });
 
       setTxHash(claimHash);
@@ -184,7 +175,7 @@ export default function ClaimPage() {
           <PrimaryButton
             disabled={
               !secret ||
-              !walletClient ||
+              !address ||
               status === "committing" ||
               status === "claiming" ||
               claim.expiry <= BigInt(Math.floor(Date.now() / 1000))

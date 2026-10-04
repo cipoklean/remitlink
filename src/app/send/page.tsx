@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
-import { encodePacked, keccak256, parseEther, toHex } from "viem";
-import { useEmbeddedWalletClient } from "@/components/useEmbeddedWalletClient";
+import { keccak256, toHex } from "viem";
+import { useSponsoredSend } from "@/components/useSponsoredSend";
 import {
   Card,
   Loading,
@@ -36,7 +36,7 @@ const MAX_UINT256 = (1n << 256n) - 1n;
 export default function SendPage() {
   const router = useRouter();
   const { ready, user } = usePrivy();
-  const walletClient = useEmbeddedWalletClient();
+  const sponsored = useSponsoredSend();
   const [amount, setAmount] = useState("100");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,20 +49,18 @@ export default function SendPage() {
   const savings = Math.max(0, wireFee - remitFee);
 
   async function handleSend() {
-    if (!walletClient || usd <= 0) return;
+    if (usd <= 0) return;
     setBusy(true);
     setError(null);
     try {
-      // 1. Approve the escrow to pull exactly this amount.
       const amountUnits = BigInt(Math.round(usd * 10 ** STABLECOIN_DECIMALS));
-      const approveHash = await walletClient.writeContract({
-        address: STABLECOIN_ADDRESS,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [ESCROW_ADDRESS, MAX_UINT256],
-        chain: monadTestnet,
-        account: walletClient.account!,
-      });
+
+      // 1. Approve the escrow to pull exactly this amount. Gas is sponsored,
+      //    so the sender never needs to hold MON.
+      const approveHash = await sponsored.approve(
+        ESCROW_ADDRESS,
+        MAX_UINT256,
+      );
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
       // 2. Secret lives only client-side; only its hash goes on-chain.
@@ -73,14 +71,12 @@ export default function SendPage() {
       // 3. Escrow for 7 days.
       const expiry = BigInt(Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60);
 
-      const hash = await walletClient.writeContract({
-        address: ESCROW_ADDRESS,
-        abi: escrowAbi,
-        functionName: "createClaim",
-        args: [STABLECOIN_ADDRESS, amountUnits, claimHash, expiry],
-        chain: monadTestnet,
-        account: walletClient.account!,
-      });
+      const hash = await sponsored.createClaim(
+        STABLECOIN_ADDRESS,
+        amountUnits,
+        claimHash,
+        expiry,
+      );
       await publicClient.waitForTransactionReceipt({ hash });
 
       // 4. Read the new claimId back on-chain.
@@ -168,7 +164,7 @@ export default function SendPage() {
 
       <div className="mt-5">
         <PrimaryButton
-          disabled={busy || usd <= 0 || !walletClient}
+          disabled={busy || usd <= 0 || !sponsored.hasWallet}
           onClick={handleSend}
         >
           {busy ? "Setting up your link…" : "Create claim link"}
