@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useCreateWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import { Card, Loading, MockBadge, Shell } from "@/components/ui";
@@ -17,11 +17,55 @@ export default function HomePage() {
   const router = useRouter();
   const { ready, user } = usePrivy();
   const { wallets } = useWallets();
+  const { createWallet } = useCreateWallet();
   const [balance, setBalance] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const address = (wallets ?? [])[0]?.address;
+
+  // Users who signed in before embedded-wallet creation was enabled have no
+  // wallet. Offer to create one rather than silently rendering nothing.
+  if (ready && user && !address) {
+    return (
+      <Shell
+        title="Finish setting up"
+        subtitle="One step left before you can send."
+        back={{ href: "/", label: "Sign out" }}
+      >
+        <Card>
+          <p className="text-sm text-muted">
+            Your sign-in worked, but this account has no sending address yet.
+            Creating one takes a second.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setCreating(true);
+              createWallet()
+                .catch((e: unknown) =>
+                  setError(
+                    e instanceof Error ? e.message : "Could not create account",
+                  ),
+                )
+                .finally(() => setCreating(false));
+            }}
+            disabled={creating}
+            className="mt-4 w-full rounded-full bg-accent px-5 py-3.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {creating ? "Setting up…" : "Set up my account"}
+          </button>
+          {error ? (
+            <p className="mt-2 text-xs text-red-600">{error}</p>
+          ) : null}
+        </Card>
+        <p className="mt-4 text-xs text-muted">
+          Still stuck? Sign out and back in — that also creates it.
+        </p>
+      </Shell>
+    );
+  }
 
   useEffect(() => {
     if (ready && !user) router.replace("/");
