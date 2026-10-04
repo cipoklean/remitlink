@@ -1,35 +1,56 @@
 "use client";
 
-import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { encodeFunctionData } from "viem";
-import { ESCROW_ADDRESS, CHAIN_ID, erc20Abi, escrowAbi } from "@/lib/chain";
-import { useWallets } from "@privy-io/react-auth";
+import {
+  usePrivy,
+  useSendTransaction,
+  useWallets,
+} from "@privy-io/react-auth";
+import {
+  createWalletClient,
+  custom,
+  encodeFunctionData,
+  parseAbi,
+} from "viem";
+import { monadTestnet } from "viem/chains";
+import { CHAIN_ID, ESCROW_ADDRESS, STABLECOIN_ADDRESS } from "@/lib/chain";
+import { useEffect, useState } from "react";
 
 /**
- * Sends a transaction through Privy's embedded wallet with gas sponsorship
- * (EIP-7702 + Privy paymaster), so users never need to hold MON.
+ * Two send paths:
  *
- * Requires "Sponsor gas fees" enabled for Monad Testnet in the Privy dashboard
- * (Fee sponsorship page). See AGENT.md.
+ * 1. Sponsored (`NEXT_PUBLIC_SPONSOR_GAS=true`): Privy's sendTransaction with
+ *    `sponsor: true` (EIP-7702 + Privy paymaster) so users hold no MON.
+ *    Requires "Sponsor gas fees" enabled for Monad Testnet in the Privy
+ *    dashboard plus defaultChain/supportedChains set in Providers.tsx.
  *
- * `NEXT_PUBLIC_SPONSOR_GAS=false` falls back to an ordinary (user-paid) send.
- * That is the escape hatch: when sponsorship is misconfigured Privy never
- * resolves the request and the UI hangs forever with nothing broadcast, so we
- * bound it with a timeout and can turn it off without a code change.
+ * 2. Fallback (default): plain viem sendTransaction through the Privy embedded
+ *    wallet's EIP-1193 provider. The user pays gas from their own balance.
+ *
+ * The fallback exists because Privy's sendTransaction rejected our requests
+ * with "Missing or invalid parameters", and hung indefinitely under
+ * sponsor:true. The viem path uses standard eth_sendTransaction.
  */
 const SPONSOR = process.env.NEXT_PUBLIC_SPONSOR_GAS === "true";
 const SPONSOR_TIMEOUT_MS = 25_000;
+
+const commitAbi = parseAbi([
+  "function commitRecipient(uint256 claimId, address recipient)",
+]);
+const claimAbi = parseAbi([
+  "function claim(uint256 claimId, uint256 secret, address recipient)",
+]);
+const createClaimAbi = parseAbi([
+  "function createClaim(address token, uint256 amount, bytes32 claimHash, uint256 expiry) returns (uint256)",
+]);
+const approveAbi = parseAbi([
+  "function approve(address spender, uint256 amount) returns (bool)",
+]);
 
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string) {
   let timer: ReturnType<typeof setTimeout>;
   const timeout = new Promise<never>((_, reject) => {
     timer = setTimeout(
-      () =>
-        reject(
-          new Error(
-            `${label} timed out after ${ms / 1000}s. Gas sponsorship may not be enabled for Monad Testnet — set NEXT_PUBLIC_SPONSOR_GAS=false to send without it.`,
-          ),
-        ),
+      () => reject(new Error(`${label} timed out after ${ms / 1000}s.`)),
       ms,
     );
   });
@@ -40,48 +61,100 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string) {
   }
 }
 
+type Provider = {
+  request(args: { method: string; params?: unknown }): Promise<unknown>;
+};
+
 export function useSponsoredSend() {
   const { sendTransaction } = useSendTransaction();
   const { ready, user } = usePrivy();
   const { wallets } = useWallets();
   const address = (wallets ?? [])[0]?.address;
+  const [viemClient, setViemClient] = useState<ReturnType<
+    typeof createWalletClient
+  > | null>(null);
 
-  const sponsorEnabled = SPONSOR;
+  // Build a viem wallet client over the embedded wallet's EIP-1193 provider.
+  useEffect(() => {
+    const wallet = wallets?.[0] as unknown as
+      | (Provider & { getEthereumProvider?: () => Promise<Provider> })
+      | undefined;
+    if (!address || !wallet) {
+      setViemClient(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const provider =
+          typeof wallet.getEthereumProvider === "function"
+            ? await wallet.getEthereumProvider()
+            : wallet;
+        if (cancelled || !provider) return;
+        // Privy's provider is EIP-1193; viem's `custom` expects the provider
+        // object itself (with a request method), so pass it directly.
+        setViemClient(
+          createWalletClient({
+            account: address as `0x${string}`,
+            chain: monadTestnet,
+            transport: custom(provider as never),
+          }),
+        );
+      } catch {
+        if (!cancelled) setViemClient(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [address, wallets]);
 
+  /** Send raw calldata, sponsored or user-paid depending on the flag. */
   async function send(args: {
-    to: string;
+    to: `0x${string}`;
     data: `0x${string}`;
-    value?: bigint;
   }): Promise<`0x${string}`> {
-    const request = {
+    if (SPONSOR) {
+      const { hash } = await withTimeout(
+        sendTransaction(
+          { to: args.to, data: args.data, chainId: CHAIN_ID },
+          { sponsor: true },
+        ),
+        SPONSOR_TIMEOUT_MS,
+        "Sponsored transaction",
+      );
+      return hash;
+    }
+
+    if (!viemClient) {
+      throw new Error(
+        "No wallet connection available yet. Reload the page and try again.",
+      );
+    }
+    const hash = await viemClient.sendTransaction({
+      account: viemClient.account!,
+      chain: monadTestnet,
       to: args.to,
       data: args.data,
-      chainId: CHAIN_ID,
-      value: args.value ?? 0n,
-    };
-    const { hash } = sponsorEnabled
-      ? await withTimeout(
-          sendTransaction(request, { sponsor: true }),
-          SPONSOR_TIMEOUT_MS,
-          "Sponsored transaction",
-        )
-      : await sendTransaction(request);
+      value: 0n,
+    });
     return hash;
   }
 
   return {
     ready,
     user,
-    sponsorEnabled,
+    sponsorEnabled: SPONSOR,
     address: address as `0x${string}` | undefined,
-    hasWallet: Boolean(address),
+    hasWallet: Boolean(address) && Boolean(SPONSOR || viemClient),
     send,
-    // --- ClaimEscrow helpers, sponsored ---
+
+    // --- ClaimEscrow helpers ---
     async commitRecipient(claimId: bigint, recipient: `0x${string}`) {
       return send({
         to: ESCROW_ADDRESS,
         data: encodeFunctionData({
-          abi: escrowAbi,
+          abi: commitAbi,
           functionName: "commitRecipient",
           args: [claimId, recipient],
         }),
@@ -91,20 +164,9 @@ export function useSponsoredSend() {
       return send({
         to: ESCROW_ADDRESS,
         data: encodeFunctionData({
-          abi: escrowAbi,
+          abi: claimAbi,
           functionName: "claim",
           args: [claimId, secret, recipient],
-        }),
-      });
-    },
-    // --- Token helpers, sponsored ---
-    async approve(spender: `0x${string}`, amount: bigint) {
-      return send({
-        to: spender,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: "approve",
-          args: [spender, amount],
         }),
       });
     },
@@ -117,9 +179,21 @@ export function useSponsoredSend() {
       return send({
         to: ESCROW_ADDRESS,
         data: encodeFunctionData({
-          abi: escrowAbi,
+          abi: createClaimAbi,
           functionName: "createClaim",
           args: [token, amount, claimHash, expiry],
+        }),
+      });
+    },
+
+    // --- Token helper ---
+    async approve(spender: `0x${string}`, amount: bigint) {
+      return send({
+        to: STABLECOIN_ADDRESS,
+        data: encodeFunctionData({
+          abi: approveAbi,
+          functionName: "approve",
+          args: [spender, amount],
         }),
       });
     },
