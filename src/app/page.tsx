@@ -1,75 +1,94 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  PrivyProvider,
   useLoginWithPasskey,
   usePrivy,
   useSignupWithPasskey,
 } from "@privy-io/react-auth";
+import { useEffect } from "react";
+import { CORRIDOR, formatNgn, formatUsd, usdToNgn } from "@/lib/corridor";
+import { Loading, MockBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
 
-const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID!;
-
-function AuthButtons() {
+function SignInPanel() {
+  const router = useRouter();
   const { ready, user, logout } = usePrivy();
   const { loginWithPasskey } = useLoginWithPasskey();
   const { signupWithPasskey } = useSignupWithPasskey();
 
-  if (!ready) {
-    return <p className="text-center text-sm text-zinc-500">Loading…</p>;
-  }
+  useEffect(() => {
+    if (user) router.replace("/home");
+  }, [user, router]);
 
-  if (user) {
-    return (
-      <div className="rounded-2xl border border-zinc-200 p-4 text-center">
-        <p className="text-sm text-zinc-600">Signed in</p>
-        <p className="mt-1 truncate font-mono text-xs text-zinc-500">
-          {user.id}
-        </p>
-        <button
-          onClick={logout}
-          className="mt-4 w-full rounded-full bg-zinc-900 py-2.5 text-sm font-medium text-white"
-        >
-          Sign out
-        </button>
-      </div>
-    );
-  }
+  if (!ready) return <Loading label="Getting things ready…" />;
+
+  if (user) return <Loading label="Taking you to your account…" />;
 
   return (
     <div className="flex flex-col gap-3">
-      <button
-        onClick={() => loginWithPasskey()}
-        className="w-full rounded-full bg-teal-700 py-3 text-sm font-medium text-white"
-      >
+      <PrimaryButton onClick={() => loginWithPasskey()}>
         Continue with passkey
-      </button>
-      <button
-        onClick={() => signupWithPasskey()}
-        className="w-full rounded-full border border-zinc-300 py-3 text-sm font-medium text-zinc-800"
+      </PrimaryButton>
+      <SecondaryButton onClick={() => signupWithPasskey()}>
+        First time here? Create an account
+      </SecondaryButton>
+      <p className="mt-1 text-center text-xs text-muted">
+        Your face or fingerprint is your account. No passwords, no forms.
+      </p>
+    </div>
+  );
+}
+
+function AccountPanel() {
+  const { logout } = usePrivy();
+  return (
+    <div className="flex flex-col gap-3">
+      <Link
+        href="/home"
+        className="w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white"
       >
-        Create an account with passkey
-      </button>
+        Open RemitLink
+      </Link>
+      <SecondaryButton onClick={logout}>Sign out</SecondaryButton>
     </div>
   );
 }
 
 export default function Page() {
+  const { ready, user } = usePrivy();
+  const sampleUsd = 200;
+
   return (
-    <PrivyProvider appId={PRIVY_APP_ID} config={{ loginMethods: ["passkey"] }}>
-      <main className="flex min-h-[100dvh] flex-col items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            RemitLink
-          </h1>
-          <p className="mx-auto mt-2 max-w-xs text-sm text-zinc-600">
-            Send dollars home in seconds. No account needed — your passkey is
-            your account.
-          </p>
-        </div>
-        <div className="mt-8 w-full max-w-sm">
-          <AuthButtons />
-        </div>
-      </main>
-    </PrivyProvider>
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center px-5 py-10">
+      <div className="text-center">
+        <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
+          {CORRIDOR.label}
+        </p>
+        <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight">
+          Send money home
+          <br />
+          <span className="italic text-accent">without the runaround.</span>
+        </h1>
+        <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
+          Sign in with your face. Send dollars. Share one link. They claim it with
+          their own passkey — no account, no app, no forms.
+        </p>
+      </div>
+
+      <div className="mt-8 rounded-2xl border border-line bg-white/70 p-5">
+        <p className="text-xs text-muted">Example</p>
+        <p className="mt-1 font-serif text-2xl">{formatUsd(sampleUsd)}</p>
+        <p className="mt-1 text-sm text-muted">
+          arrives as about{" "}
+          <span className="font-medium text-foreground">
+            {formatNgn(usdToNgn(sampleUsd))}
+          </span>{" "}
+          <MockBadge label="MOCK RATE" />
+        </p>
+      </div>
+
+      <div className="mt-8">{!ready ? <Loading /> : user ? <AccountPanel /> : <SignInPanel />}</div>
+    </main>
   );
 }
