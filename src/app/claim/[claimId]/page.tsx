@@ -120,30 +120,37 @@ export default function ClaimPage() {
   const expired =
     claim !== null && claim.expiry <= BigInt(Math.floor(Date.now() / 1000));
 
-  /** Commit then claim, in that order. Safe to call after sign-in. */
+  /**
+   * Relay the claim: our server pays the gas so a first-time recipient needs
+   * no native token. Falls back to the wallet path if the relayer is
+   * unavailable (e.g. misconfigured on a fresh deploy).
+   */
   async function runClaim() {
     if (!address || !secret) return;
     setError(null);
     try {
-      // Step 1: lock the payout address BEFORE the secret is ever broadcast,
-      // so a mempool-copied secret cannot be redirected to someone else.
       setStatus("committing");
-      const commitHash = await sponsored.commitRecipient(
-        BigInt(claimId),
-        address,
-      );
-      await publicClient.waitForTransactionReceipt({ hash: commitHash });
 
-      // Step 2: reveal the secret to release the funds.
-      setStatus("claiming");
-      const claimHash = await sponsored.claim(
-        BigInt(claimId),
-        BigInt(secret),
-        address,
-      );
-      await publicClient.waitForTransactionReceipt({ hash: claimHash });
+      const res = await fetch("/api/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          claimId,
+          secret,
+          recipient: address,
+        }),
+      });
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        txs?: `0x${string}`[];
+      };
 
-      setTxHash(claimHash);
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error ?? "The claim could not be completed.");
+      }
+
+      setTxHash(data.txs?.[data.txs.length - 1] ?? null);
       setStatus("done");
       await loadClaim();
     } catch (e) {
