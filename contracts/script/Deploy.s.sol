@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Script} from "forge-std/Script.sol";
+import {console} from "forge-std/console.sol";
 import {ClaimEscrow} from "../src/ClaimEscrow.sol";
 import {MockERC20} from "../test/mocks/MockERC20.sol";
 
