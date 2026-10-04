@@ -1,0 +1,14 @@
+[profile.default]
+src = "contracts/src"
+test = "contracts/test"
+script = "contracts/script"
+out = "contracts/out"
+libs = ["lib", "node_modules"]
+cache_path = "contracts/cache"
+
+[profile.default.fuzz]
+runs = 256
+
+# Monad testnet: chain ID 10143 (verified live, see AGENT.md decision log)
+[rpc_endpoints]
+monad_testnet = "${MONAD_TESTNET_RPC_URL}"
