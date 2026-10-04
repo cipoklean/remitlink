@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 import {
   Card,
   Loading,
@@ -11,21 +12,49 @@ import {
   SecondaryButton,
   Shell,
 } from "@/components/ui";
-import { CORRIDOR, formatNgn } from "@/lib/corridor";
+import {
+  ESCROW_ADDRESS,
+  STABLECOIN_DECIMALS,
+  escrowAbi,
+  publicClient,
+} from "@/lib/chain";
+import { CORRIDOR, formatNgn, usdToNgn } from "@/lib/corridor";
 
 export default function SharePage() {
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [amount, setAmount] = useState<string | null>(null);
 
   useEffect(() => {
     const secret = sessionStorage.getItem(`secret:${claimId}`);
-    if (!secret) return;
-    const origin = window.location.origin;
-    // Secret goes in the URL FRAGMENT (#) — browsers never send it to a server,
-    // so it cannot leak into server logs or analytics.
-    setLink(`${origin}/claim/${claimId}#${secret}`);
+    if (secret) {
+      const origin = window.location.origin;
+      // Secret goes in the URL FRAGMENT (#) — browsers never send it to a
+      // server, so it cannot leak into server logs or analytics.
+      setLink(`${origin}/claim/${claimId}#${secret}`);
+    }
+
+    // Read the escrowed amount so the sender sees the real figure.
+    if (!claimId) return;
+    publicClient
+      .readContract({
+        address: ESCROW_ADDRESS,
+        abi: escrowAbi,
+        functionName: "claims",
+        args: [BigInt(claimId)],
+      })
+      .then((raw) => {
+        const value = (raw as readonly unknown[])[2] as bigint;
+        setAmount(
+          `$${formatUnits(value, STABLECOIN_DECIMALS).replace(
+            /\B(?=(\d{3})+(?!\d))/g,
+            ",",
+          )}`,
+        );
+      })
+      .catch(() => setAmount(null));
   }, [claimId]);
 
   const whatsapp = link
@@ -63,7 +92,17 @@ export default function SharePage() {
         <>
           <Card>
             <p className="text-xs text-muted">Amount</p>
-            <p className="mt-1 font-serif text-2xl">Claim link #${claimId}</p>
+            <p className="mt-1 font-serif text-2xl">
+              {amount ?? `Claim link #${claimId}`}
+            </p>
+            {amount ? (
+              <p className="mt-1 text-xs text-muted">
+                About {formatNgn(usdToNgn(Number(amount.replace(/[$,]/g, ""))))}{" "}
+                received
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-muted">Link #{claimId}</p>
+            )}
             <p className="mt-2 text-sm text-muted">
               The money is locked until they claim it, or comes back to you after 7
               days.
