@@ -7,15 +7,42 @@ import {
   usePrivy,
   useSignupWithPasskey,
 } from "@privy-io/react-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { CORRIDOR, formatNgn, formatUsd, usdToNgn } from "@/lib/corridor";
-import { Loading, MockBadge, PrimaryButton, SecondaryButton } from "@/components/ui";
+import {
+  Loading,
+  MockBadge,
+  Notice,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/components/ui";
+
+/** Turn Privy error codes into something actionable for a non-technical user. */
+function friendlyAuthError(e: unknown): string {
+  const message = e instanceof Error ? e.message : String(e);
+  if (/invalid_origin|not been allowlisted/i.test(message)) {
+    return "This site isn't approved for sign-in yet. Ask the developer to add this domain to the Privy allowlist.";
+  }
+  if (/PRF_UNAVAILABLE|PRF/i.test(message)) {
+    return "Your phone didn't share the passkey key. Try a different browser or device.";
+  }
+  if (/user_cancelled|cancelled|canceled/i.test(message)) {
+    return "Sign-in was cancelled. Try again when you're ready.";
+  }
+  return message;
+}
 
 function SignInPanel() {
   const router = useRouter();
   const { ready, user, logout } = usePrivy();
-  const { loginWithPasskey } = useLoginWithPasskey();
-  const { signupWithPasskey } = useSignupWithPasskey();
+  const [error, setError] = useState<string | null>(null);
+
+  const { loginWithPasskey } = useLoginWithPasskey({
+    onError: (e) => setError(friendlyAuthError(e)),
+  });
+  const { signupWithPasskey } = useSignupWithPasskey({
+    onError: (e) => setError(friendlyAuthError(e)),
+  });
 
   useEffect(() => {
     if (user) router.replace("/home");
@@ -36,6 +63,11 @@ function SignInPanel() {
       <p className="mt-1 text-center text-xs text-muted">
         Your face or fingerprint is your account. No passwords, no forms.
       </p>
+      {error ? (
+        <div className="mt-3">
+          <Notice tone="error">{error}</Notice>
+        </div>
+      ) : null}
     </div>
   );
 }
