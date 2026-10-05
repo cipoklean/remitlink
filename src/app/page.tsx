@@ -111,7 +111,7 @@ export default function Page() {
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
           Sign in with your fingerprint or face. Send dollars. Share one link.
-          They claim it with their own passkey — no account, no app, no forms.
+          They claim it with their own passkey - no account, no app, no forms.
         </p>
       </div>
 

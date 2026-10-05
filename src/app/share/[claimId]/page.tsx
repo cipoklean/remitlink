@@ -32,7 +32,7 @@ export default function SharePage() {
     const secret = sessionStorage.getItem(`secret:${claimId}`);
     if (secret) {
       const origin = window.location.origin;
-      // Secret goes in the URL FRAGMENT (#) — browsers never send it to a
+      // Secret goes in the URL FRAGMENT (#) - browsers never send it to a
       // server, so it cannot leak into server logs or analytics.
       setLink(`${origin}/claim/${claimId}#${secret}`);
     }
@@ -111,7 +111,7 @@ export default function SharePage() {
               {copied === "copied"
                 ? "Copied ✓"
                 : copied === "failed"
-                  ? "Copy failed — long-press to select"
+                  ? "Copy failed - long-press to select"
                   : "Copy link"}
             </PrimaryButton>
             {whatsapp ? (
@@ -148,7 +148,7 @@ export default function SharePage() {
               {link}
             </p>
             <p className="mt-2">
-              The part after <code>#</code> is the secret key. Treat it like cash —
+              The part after <code>#</code> is the secret key. Treat it like cash -
               whoever has it can claim the money.
             </p>
           </details>

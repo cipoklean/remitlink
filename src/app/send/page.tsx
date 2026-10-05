@@ -106,7 +106,7 @@ export default function SendPage() {
       })) as bigint;
       const claimId = nextId - 1n;
 
-      // 5. Hand the secret to the share screen via sessionStorage only —
+      // 5. Hand the secret to the share screen via sessionStorage only -
       //    never a query param, never logged server-side.
       sessionStorage.setItem(`secret:${claimId}`, secret.toString());
 

@@ -38,7 +38,7 @@ type ClaimData = {
 /**
  * The whole recipient journey lives on this one page: sign in with a passkey,
  * create an account if needed, then commit + claim. We deliberately do NOT send
- * the user to the landing page — that bounced them to /home and lost the claim.
+ * the user to the landing page - that bounced them to /home and lost the claim.
  */
 export default function ClaimPage() {
   const params = useParams<{ claimId: string }>();
@@ -224,7 +224,7 @@ export default function ClaimPage() {
       <Card>
         <p className="text-xs text-muted">Amount waiting for you</p>
         <p className="mt-1 font-serif text-3xl">
-          {claim ? `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—"}
+          {claim ? `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "-"}
         </p>
         <p className="mt-1 text-xs text-muted">
           {claim ? `About ${formatNgn(usdToNgn(usd))} received` : "Checking…"}

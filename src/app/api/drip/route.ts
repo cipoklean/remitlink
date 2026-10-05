@@ -19,7 +19,7 @@ import { monadTestnet, publicClient } from "@/lib/chain";
  *
  * Abuse protection:
  *  - per-IP: max 3 requests / 10 minutes
- *  - per-address: one drip per DRIP_COOLDOWN_MS (default 24h) — we top up, we
+ *  - per-address: one drip per DRIP_COOLDOWN_MS (default 24h) - we top up, we
  *    do not keep sending
  *  - per-tx cap: DRIP_AMOUNT_MON (default 0.05 MON), so the cost is bounded
  *  - daily cap: DRIP_DAILY_CAP_MON across all addresses, so a scripted run

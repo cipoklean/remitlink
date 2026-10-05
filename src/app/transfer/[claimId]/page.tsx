@@ -213,7 +213,7 @@ export default function TransferPage() {
           {copied === "copied"
             ? "Link copied ✓"
             : copied === "failed"
-              ? "Copy failed — long-press to copy"
+              ? "Copy failed - long-press to copy"
               : "Copy claim link"}
         </button>
       </Card>
@@ -233,12 +233,12 @@ export default function TransferPage() {
             <div className="flex items-baseline justify-between gap-3">
               <dt className="text-muted">Network fee paid</dt>
               <dd className="font-mono text-xs">
-                {metrics.feeMon !== null ? `${metrics.feeMon} MON` : "—"}
+                {metrics.feeMon !== null ? `${metrics.feeMon} MON` : "-"}
               </dd>
             </div>
           </dl>
           <p className="mt-2 text-xs text-muted">
-            Read from block timestamps and the gas actually used — not an
+            Read from block timestamps and the gas actually used - not an
             estimate.
           </p>
         </Card>

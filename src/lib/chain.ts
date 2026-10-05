@@ -23,7 +23,7 @@ export const publicClient = createPublicClient({
   transport: http("https://testnet-rpc.monad.xyz"),
 });
 
-// Addresses come from deployments.json — never hardcoded.
+// Addresses come from deployments.json - never hardcoded.
 export const ESCROW_ADDRESS = deployments.contracts.ClaimEscrow
   .address as `0x${string}`;
 export const STABLECOIN_ADDRESS = deployments.contracts.Stablecoin
@@ -37,7 +37,7 @@ export const STABLECOIN_SYMBOL = deployments.contracts.Stablecoin.symbol;
 // testnet. See deployments.json and AGENT.md.
 export const isMockToken = deployments.contracts.Stablecoin.MOCK === true;
 
-// NOTE: these must be parseAbi(...) — viem's encodeFunctionData reads `name` off
+// NOTE: these must be parseAbi(...) - viem's encodeFunctionData reads `name` off
 // each ABI item, so raw human-readable strings throw
 // "Cannot use 'in' operator to search for 'name'".
 export const escrowAbi = parseAbi([

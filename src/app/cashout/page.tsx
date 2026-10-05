@@ -11,12 +11,12 @@ import {
 } from "@/lib/cashout";
 
 /**
- * Cash-out to a Nigerian bank — MOCK (AGENT.md section 7b, item A4).
+ * Cash-out to a Nigerian bank - MOCK (AGENT.md section 7b, item A4).
  *
  * This screen is a STORY, not an integration. Nothing is sent anywhere: no
  * partner API is called, no payout is triggered, no money moves. It exists so
- * the product has a complete shape — money arrives, then it lands in a real bank
- * account — while staying honest about what is real.
+ * the product has a complete shape - money arrives, then it lands in a real bank
+ * account - while staying honest about what is real.
  *
  * It is labeled MOCK in the UI, in code comments, and must be labeled in the
  * README and the write-up (hard rule 4). The production path named in the
@@ -59,7 +59,7 @@ function CashOutInner() {
       <Shell title="Almost there" back={{ href: "/home", label: "Home" }}>
         <Card>
           <div className="flex items-center gap-2">
-            <MockBadge label="MOCK — NOT A REAL PAYOUT" />
+            <MockBadge label="MOCK - NOT A REAL PAYOUT" />
           </div>
           <p className="mt-3 font-serif text-3xl">{formatNgn(ngnNet)}</p>
           <p className="mt-1 text-xs text-muted">
@@ -111,7 +111,7 @@ function CashOutInner() {
           <div className="flex items-center gap-2">
             <MockBadge label="MOCK" />
             <span className="text-xs text-muted">
-              Demo only — no real payout
+              Demo only - no real payout
             </span>
           </div>
           <p className="mt-3 text-xs text-muted">You&apos;ll receive</p>
@@ -156,7 +156,7 @@ function CashOutInner() {
     >
       <div className="mb-4 flex items-center gap-2">
         <MockBadge label="MOCK" />
-        <span className="text-xs text-muted">Demo only — no real payout</span>
+        <span className="text-xs text-muted">Demo only - no real payout</span>
       </div>
 
       <Card>

@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "RemitLink",
-  description: "Send money home with a passkey — no accounts, no forms.",
+  description: "Send money home with a passkey - no accounts, no forms.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

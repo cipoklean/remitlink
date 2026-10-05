@@ -12,7 +12,7 @@ import { ESCROW_ADDRESS, monadTestnet, publicClient } from "@/lib/chain";
  *
  * Note: refund only becomes possible once the claim expires
  * (`if (block.timestamp <= c.expiry) revert RefundTooEarly()`). Before that the
- * sender has no way to cancel — that is a property of the deployed contract, not
+ * sender has no way to cancel - that is a property of the deployed contract, not
  * a UI gap, so the UI says so plainly instead of offering a button that cannot
  * work.
  *

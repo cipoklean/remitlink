@@ -1,5 +1,5 @@
 /**
- * Cash-out partner catalog — MOCK DATA.
+ * Cash-out partner catalog - MOCK DATA.
  *
  * HONESTY (AGENT.md hard rule 4): these entries are illustrative placeholders,
  * not real integrations. No API is called, no payout is triggered, and no
@@ -23,7 +23,7 @@ export function findPartner(id: string): CashOutPartner | undefined {
 }
 
 /**
- * Nigerian bank account validation. Shape only — 10 digits. This checks that
+ * Nigerian bank account validation. Shape only - 10 digits. This checks that
  * the input is plausible; it cannot and does not confirm the account exists or
  * is the right person's, because that requires a real bank integration.
  */

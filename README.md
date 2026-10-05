@@ -6,13 +6,13 @@ Send money home with a passkey. Mobile-first, built for **Monad Metropolis** (tr
 
 ## What it is
 
-A sender signs in with a passkey (no seed phrase, no forms), sends dollars, and gets a **claim link**. The recipient opens the link (WhatsApp/SMS/QR), signs in with their own passkey, and claims the money — no prior account needed.
+A sender signs in with a passkey (no seed phrase, no forms), sends dollars, and gets a **claim link**. The recipient opens the link (WhatsApp/SMS/QR), signs in with their own passkey, and claims the money - no prior account needed.
 
 The UI never says blockchain, wallet, gas, crypto, token, or seed phrase.
 
 ## Live
 
-**https://remitlink.vercel.app** — passkeys are bound to the domain, so this URL is permanent.
+**https://remitlink.vercel.app** - passkeys are bound to the domain, so this URL is permanent.
 
 ## Run it
 
@@ -81,7 +81,7 @@ The secret appears in calldata at reveal, so a mempool watcher could copy it. Be
 **Whoever commits first *and* knows the secret wins the claim.**
 
 This is griefing, not theft: the legitimate recipient is simply outbid, and the funds return to the sender at expiry. It is bounded by the expiry window and pinned by
-`test_KnownLimitation_FirstCommitterWithSecretWins` in `contracts/test/ClaimEscrow.t.sol` so it cannot be silently "fixed" later. Fixing it properly needs a commit-and-reveal scheme with a bonding or cancellation rule — out of scope here.
+`test_KnownLimitation_FirstCommitterWithSecretWins` in `contracts/test/ClaimEscrow.t.sol` so it cannot be silently "fixed" later. Fixing it properly needs a commit-and-reveal scheme with a bonding or cancellation rule - out of scope here.
 
 ### Server-side caps
 
@@ -108,9 +108,9 @@ Per the honesty rule, everything simulated is labeled in code, in the UI, and he
 
 | Item | Status | Where |
 |---|---|---|
-| **USD → NGN rate** | **MOCK** — static `1480`, labeled "MOCK RATE" in the UI | `src/lib/corridor.ts` |
+| **USD → NGN rate** | **MOCK** - static `1480`, labeled "MOCK RATE" in the UI | `src/lib/corridor.ts` |
 | **Competitor fees** | Illustrative figures, labeled "typical fees, illustrative" | `src/lib/corridor.ts` |
-| **Cash-out to bank** | **MOCK** — no partner API is called, no money moves | `src/app/cashout/` |
+| **Cash-out to bank** | **MOCK** - no partner API is called, no money moves | `src/app/cashout/` |
 | **Test-money + gas top-ups** | Real testnet transfers from a treasury, but demo-only funds | `/api/faucet`, `/api/drip` |
 
 The cash-out screen is a **product story, not an integration**. The production path is a licensed Nigerian payout partner quoted server-side.
@@ -119,7 +119,7 @@ The cash-out screen is a **product story, not an integration**. The production p
 
 `/activity` and the transfer metrics read from an **Envio HyperIndex**, not from the chain directly. This is required, not a preference: the public Monad testnet RPC caps `eth_getLogs` at a **100-block range**, so reading a claim's history directly would mean ~680,000 requests.
 
-Metrics shown on `/transfer/[id]` are **measured** — block timestamps for settle time, and `gasUsed × effectiveGasPrice` from the real receipt for the fee. Nothing is estimated, and unmeasurable values render as such.
+Metrics shown on `/transfer/[id]` are **measured** - block timestamps for settle time, and `gasUsed × effectiveGasPrice` from the real receipt for the fee. Nothing is estimated, and unmeasurable values render as such.
 
 ## Bounties
 

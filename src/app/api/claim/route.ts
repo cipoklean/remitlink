@@ -54,7 +54,7 @@ export const runtime = "nodejs";
  *
  * These are in-memory on purpose: correct for a single Vercel instance and
  * good enough for a hackathon demo. A multi-instance deploy would need a
- * shared store (Upstash/Redis) — see README "Known limitations".
+ * shared store (Upstash/Redis) - see README "Known limitations".
  */
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_PER_IP = 10;
@@ -173,7 +173,7 @@ export async function POST(request: Request) {
     });
     if (relayerBalance === 0n) {
       console.error(
-        "[relayer] balance is zero — fund it or claims will fail:",
+        "[relayer] balance is zero - fund it or claims will fail:",
         relayerAccount.address,
       );
       return NextResponse.json(
@@ -193,7 +193,7 @@ export async function POST(request: Request) {
     const [, , amount, claimHash, expiry, committed, settled] = claim;
 
     if (settled) {
-      // A settled claim must never be relayed again — this is the loop that
+      // A settled claim must never be relayed again - this is the loop that
       // would otherwise let one caller drain the relayer.
       return NextResponse.json(
         { error: "This link has already been claimed." },

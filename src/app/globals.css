@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Warm off-white canvas, ink text, muted teal accent — calm, non-crypto feel. */
+  /* Warm off-white canvas, ink text, muted teal accent - calm, non-crypto feel. */
   --background: #f9f7f2;
   --foreground: #1c1a17;
   --accent: #0f766e;

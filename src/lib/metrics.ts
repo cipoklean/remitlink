@@ -1,7 +1,7 @@
 /**
  * Transfer metrics for the "why Monad?" proof (AGENT.md section 7b, B1).
  *
- * HONESTY (hard rule 4): every number here is MEASURED from chain data — block
+ * HONESTY (hard rule 4): every number here is MEASURED from chain data - block
  * timestamps and gas actually used. Nothing is hardcoded, estimated, or
  * rounded up to look good. If we cannot measure it, we say so rather than
  * inventing a figure.
@@ -92,7 +92,7 @@ function formatMon(wei: bigint): string {
   return `${whole}.${frac.toString().padStart(18, "0").slice(0, 6)}`;
 }
 
-/** "2m 14s" / "48s" — reads better than raw seconds on a phone. */
+/** "2m 14s" / "48s" - reads better than raw seconds on a phone. */
 export function humanDuration(seconds: number): string {
   if (seconds < 60) return `${Math.round(seconds)}s`;
   const m = Math.floor(seconds / 60);

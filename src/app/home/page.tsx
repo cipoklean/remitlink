@@ -67,7 +67,7 @@ const [dripError, setDripError] = useState<string | null>(null);
           ) : null}
         </Card>
         <p className="mt-4 text-xs text-muted">
-          Still stuck? Sign out and back in — that also creates it.
+          Still stuck? Sign out and back in - that also creates it.
         </p>
       </Shell>
     );
@@ -117,11 +117,11 @@ const [dripError, setDripError] = useState<string | null>(null);
       <Card>
         <p className="text-xs text-muted">Available to send</p>
         <p className="mt-1 font-serif text-3xl">
-          {balance === null ? "—" : `$${balance}`}
+          {balance === null ? "-" : `$${balance}`}
         </p>
         <div className="mt-2 flex items-center gap-2">
           <MockBadge label="TEST BALANCE" />
-          <span className="text-xs text-muted">Demo funds — not real money</span>
+          <span className="text-xs text-muted">Demo funds - not real money</span>
         </div>
         {error ? (
           <p className="mt-2 text-xs text-red-600">Could not read balance: {error}</p>
@@ -132,7 +132,7 @@ const [dripError, setDripError] = useState<string | null>(null);
       <Card className="mt-4">
         <div className="flex items-center gap-2">
           <MockBadge label="TEST MONEY" />
-          <span className="text-xs text-muted">Testnet only — not real money</span>
+          <span className="text-xs text-muted">Testnet only - not real money</span>
         </div>
         <button
           type="button"
@@ -182,7 +182,7 @@ const [dripError, setDripError] = useState<string | null>(null);
             rel="noreferrer"
             className="mt-2 block text-xs text-accent underline underline-offset-4"
           >
-            Test money sent — view it
+            Test money sent - view it
           </a>
         ) : null}
         {dripError ? (
@@ -208,7 +208,7 @@ const [dripError, setDripError] = useState<string | null>(null);
             {copied === "copied"
               ? "Copied ✓"
               : copied === "failed"
-                ? "Copy failed — long-press to copy"
+                ? "Copy failed - long-press to copy"
                 : "Tap to copy"}
           </p>
         </Card>

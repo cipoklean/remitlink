@@ -18,7 +18,7 @@ export async function copyText(text: string): Promise<CopyResult> {
       await navigator.clipboard.writeText(text);
       return "copied";
     } catch {
-      // Permission denied or blocked — fall through to the legacy path.
+      // Permission denied or blocked - fall through to the legacy path.
     }
   }
 
