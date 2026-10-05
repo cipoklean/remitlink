@@ -9,6 +9,8 @@ import { Card, Loading, MockBadge, Shell } from "@/components/ui";
 import {
   STABLECOIN_ADDRESS,
   STABLECOIN_DECIMALS,
+  erc20Abi,
+  explorerTx,
   publicClient,
 } from "@/lib/chain";
 import { CORRIDOR } from "@/lib/corridor";
@@ -23,6 +25,9 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyResult | null>(null);
   const [creating, setCreating] = useState(false);
+const [dripping, setDripping] = useState(false);
+const [dripHash, setDripHash] = useState<string | null>(null);
+const [dripError, setDripError] = useState<string | null>(null);
 
   const address = (wallets ?? [])[0]?.address;
 
@@ -120,6 +125,68 @@ export default function HomePage() {
         </div>
         {error ? (
           <p className="mt-2 text-xs text-red-600">Could not read balance: {error}</p>
+        ) : null}
+      </Card>
+
+      {/* Test-money drip (AGENT.md 7b A1). Testnet USDC only, labeled as such. */}
+      <Card className="mt-4">
+        <div className="flex items-center gap-2">
+          <MockBadge label="TEST MONEY" />
+          <span className="text-xs text-muted">Testnet only — not real money</span>
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            if (!address || dripping) return;
+            setDripping(true);
+            setDripError(null);
+            setDripHash(null);
+            try {
+              const res = await fetch("/api/faucet", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ address }),
+              });
+              const data = (await res.json()) as {
+                hash?: string;
+                error?: string;
+              };
+              if (!res.ok || !data.hash) {
+                setDripError(data.error ?? "Could not send test money.");
+                return;
+              }
+              setDripHash(data.hash);
+              // Refresh the balance so the number above updates.
+              const v = await publicClient.readContract({
+                address: STABLECOIN_ADDRESS,
+                abi: erc20Abi,
+                functionName: "balanceOf",
+                args: [address as `0x${string}`],
+              });
+              setBalance(formatUnits(v, STABLECOIN_DECIMALS));
+            } catch {
+              setDripError("Could not reach the test-money service.");
+            } finally {
+              setDripping(false);
+            }
+          }}
+          disabled={!address || dripping}
+          className="mt-3 w-full rounded-full border border-line bg-white px-5 py-3 text-sm font-medium disabled:opacity-50"
+        >
+          {dripping ? "Sending…" : "Add $50 test dollars"}
+        </button>
+        {dripHash ? (
+          <a
+            href={explorerTx(dripHash)}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 block text-xs text-accent underline underline-offset-4"
+          >
+            Test money sent — view it
+          </a>
+        ) : null}
+        {dripError ? (
+          <p className="mt-2 text-xs text-muted">{dripError}</p>
         ) : null}
       </Card>
 
