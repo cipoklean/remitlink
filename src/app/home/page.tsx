@@ -243,13 +243,13 @@ const [claimError, setClaimError] = useState<string | null>(null);
       <div className="mt-5 flex flex-col gap-3">
         <Link
           href="/send"
-          className="w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white"
+          className="w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white transition-opacity active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Send money
         </Link>
         <Link
           href="/activity"
-          className="w-full rounded-full border border-line bg-white/70 px-5 py-3.5 text-center text-sm font-medium"
+          className="w-full rounded-full border border-line bg-white/70 px-5 py-3.5 text-center text-sm font-medium transition-opacity active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Activity
         </Link>
@@ -268,7 +268,7 @@ const [claimError, setClaimError] = useState<string | null>(null);
         <button
           type="button"
           onClick={openClaim}
-          className="mt-3 w-full rounded-full border border-line bg-white px-5 py-3 text-sm font-medium disabled:opacity-50"
+          className="mt-3 w-full rounded-full border border-line bg-white px-5 py-3 text-sm font-medium transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
         >
           Claim
         </button>

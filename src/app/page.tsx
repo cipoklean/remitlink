@@ -113,13 +113,8 @@ export default function Page() {
           Sign in with your fingerprint or face. Send dollars. Share one link.
           They claim it with their own passkey - no account, no app, no forms.
         </p>
-      </div>
-
-      <div className="mt-8 rounded-2xl border border-line bg-white/70 p-5">
-        <p className="text-xs text-muted">Example</p>
-        <p className="mt-1 font-serif text-2xl">{formatUsd(sampleUsd)}</p>
-        <p className="mt-1 text-sm text-muted">
-          arrives as about{" "}
+        <p className="mx-auto mt-3 text-xs text-muted">
+          {formatUsd(sampleUsd)} arrives as about{" "}
           <span className="font-medium text-foreground">
             {formatNgn(usdToNgn(sampleUsd))}
           </span>{" "}
@@ -127,9 +122,13 @@ export default function Page() {
         </p>
       </div>
 
-      {/* Fee comparison above the fold: the pitch should land in five seconds. */}
-      <div className="mt-3 rounded-2xl border border-line bg-white/70 p-5">
-        <p className="text-xs text-muted">Sending {formatUsd(sampleUsd)} today</p>
+      {/* Fee comparison is the pitch, so it is the hero card (audit 4B): an
+          accent-soft fill and slightly more presence than the surrounding UI,
+          and the example above is demoted to a one-line figure. */}
+      <div className="mt-6 rounded-2xl border border-accent/15 bg-accent-soft p-5">
+        <p className="text-xs font-medium text-accent">
+          Sending {formatUsd(sampleUsd)} today
+        </p>
         <div className="mt-2 space-y-1.5">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm text-muted">Typical bank wire</span>
@@ -139,12 +138,12 @@ export default function Page() {
           </div>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-sm font-medium">With RemitLink</span>
-            <span className="font-mono text-sm font-medium text-accent">
+            <span className="font-mono text-lg font-semibold text-accent">
               {formatUsd(quoteFee(FEE_QUOTES[0], sampleUsd))}
             </span>
           </div>
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-3 text-xs text-muted">
           You save about{" "}
           <span className="font-medium text-accent">
             {formatUsd(
@@ -159,7 +158,7 @@ export default function Page() {
         </p>
       </div>
 
-      <div className="mt-8">{!ready ? <Loading /> : user ? <AccountPanel /> : <SignInPanel />}</div>
+      <div className="mt-6">{!ready ? <Loading /> : user ? <AccountPanel /> : <SignInPanel />}</div>
     </main>
   );
 }

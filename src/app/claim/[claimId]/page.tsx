@@ -300,7 +300,15 @@ export default function ClaimPage() {
             </SecondaryButton>
           </>
         ) : status === "done" ? (
-          <PrimaryButton onClick={() => undefined}>Money sent to you</PrimaryButton>
+          // The success Notice ("Claimed. View on the explorer") renders above;
+          // the only meaningful next step for a recipient is to cash out, so the
+          // done state offers that CTA instead of a dead button (audit 4C).
+          <Link
+            href={`/cashout?usd=${usd.toFixed(2)}`}
+            className="block w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white"
+          >
+            Cash out to your bank
+          </Link>
         ) : (
           <>
             {txHash ? (

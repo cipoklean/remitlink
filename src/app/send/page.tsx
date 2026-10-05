@@ -193,7 +193,11 @@ export default function SendPage() {
           disabled={busy || usd <= 0 || !sponsored.hasWallet}
           onClick={handleSend}
         >
-          {busy ? "Setting up your link…" : "Create claim link"}
+          {busy
+            ? step === "creating"
+              ? "Creating your link…"
+              : "Locking your money..."
+            : "Create claim link"}
         </PrimaryButton>
         <p className="mt-3 text-center text-xs text-muted">
           The money stays locked until they claim it, or returns to you after 7 days.
