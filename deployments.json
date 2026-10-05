@@ -9,22 +9,25 @@
     "ClaimEscrow": {
       "address": "0x75b0c545F1b793200443deB06b202f5709e8eb57",
       "verified_onchain": true,
-      "note": "Secret + committed-recipient escrow. createClaim / commitRecipient / claim / refund"
+      "note": "Secret + committed-recipient escrow. createClaim / commitRecipient / claim / refund. Token-agnostic: pass any ERC-20 address."
     },
-    "MockStablecoin": {
-      "address": "0x4e932FdbDd875a0610f03E8f9d58ce85CE3b55E0",
-      "symbol": "tUSD",
+    "Stablecoin": {
+      "address": "0x534b2f3A21130d7a60830c2Df862319e593943A3",
+      "symbol": "USDC",
       "decimals": 6,
+      "issuer": "Circle",
       "verified_onchain": true,
-      "MOCK": true,
-      "note": "MOCK test stablecoin. AUSD has NO Monad testnet deployment (eth_getCode at 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a returned 0x on 2026-10-04), so per AGENT.md section 4 this labeled test ERC-20 is used instead. Replace before claiming the Agora bounty."
+      "MOCK": false,
+      "note": "REAL Circle-issued USDC on Monad testnet. Verified on-chain 2026-10-04: contract code present, symbol()=USDC, decimals()=6. Source: https://developers.circle.com/stablecoins/usdc-contract-addresses. Free testnet USDC: https://faucet.circle.com (public, no account, ~20 USDC per address per 2h)."
     }
   },
   "superseded": {
-    "ClaimEscrow_0x4232820bf5c0d76ae01f9a913548a4de8623b97b": "First deploy — superseded because the mock token was created outside vm.startBroadcast and so was never actually deployed. Left on-chain unused."
+    "ClaimEscrow_0x4232820bf5c0d76ae01f9a913548a4de8623b97b": "First escrow deploy — superseded because the mock token was constructed outside vm.startBroadcast and so was never actually deployed. Left on-chain unused.",
+    "MockStablecoin_0x4e932FdbDd875a0610f03E8f9d58ce85CE3b55E0": "tUSD — our own 6-decimal mock ERC-20. Replaced by real Circle USDC above. Not used by the app any more."
   },
   "unverified": [
     "Contract source verification on the explorer is NOT done — needs a Monadscan/MonadVision API key (owner action).",
-    "Envio indexer not yet configured for ClaimCreated/ClaimClaimed events."
+    "Envio indexer not yet configured for ClaimCreated/ClaimClaimed events.",
+    "AUSD has NO Monad testnet deployment (eth_getCode at 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a returns 0x, verified twice). Open risk for the Agora bounty — see AGENT.md section 6."
   ]
 }

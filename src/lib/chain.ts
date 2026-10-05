@@ -26,13 +26,16 @@ export const publicClient = createPublicClient({
 // Addresses come from deployments.json — never hardcoded.
 export const ESCROW_ADDRESS = deployments.contracts.ClaimEscrow
   .address as `0x${string}`;
-export const STABLECOIN_ADDRESS = deployments.contracts.MockStablecoin
+export const STABLECOIN_ADDRESS = deployments.contracts.Stablecoin
   .address as `0x${string}`;
-export const STABLECOIN_DECIMALS = deployments.contracts.MockStablecoin
+export const STABLECOIN_DECIMALS = deployments.contracts.Stablecoin
   .decimals;
+export const STABLECOIN_SYMBOL = deployments.contracts.Stablecoin.symbol;
 
-// tUSD is a MOCK test token (6 decimals). See deployments.json and AGENT.md.
-export const isMockToken = deployments.contracts.MockStablecoin.MOCK === true;
+// Real Circle-issued USDC on Monad testnet (6 decimals). `isMockToken` is
+// false; the UI still labels demo balances as test money because this is
+// testnet. See deployments.json and AGENT.md.
+export const isMockToken = deployments.contracts.Stablecoin.MOCK === true;
 
 // NOTE: these must be parseAbi(...) — viem's encodeFunctionData reads `name` off
 // each ABI item, so raw human-readable strings throw

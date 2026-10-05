@@ -43,6 +43,61 @@ const claimsAbi = parseAbi([
 
 export const runtime = "nodejs";
 
+/**
+ * Abuse protection.
+ *
+ * Anyone holding a valid secret can make us pay gas, so we bound the damage:
+ *  - per-IP: max 10 requests / 10 minutes
+ *  - per-claim: max 3 relay attempts (one real flow needs 1-2)
+ *  - per-claim-payout: once a claim is settled we never relay it again
+ *  - daily budget: stop relaying once RELAYER_DAILY_BUDGET_WEI of gas is spent
+ *
+ * These are in-memory on purpose: correct for a single Vercel instance and
+ * good enough for a hackathon demo. A multi-instance deploy would need a
+ * shared store (Upstash/Redis) — see README "Known limitations".
+ */
+const WINDOW_MS = 10 * 60 * 1000;
+const MAX_PER_IP = 10;
+const MAX_PER_CLAIM = 3;
+const DEFAULT_DAILY_BUDGET_WEI = BigInt("500000000000000000"); // 0.5 MON
+
+const ipHits = new Map<string, number[]>();
+const claimHits = new Map<string, number>();
+let daySpentWei = 0n;
+let dayStamp = 0;
+
+function rollDay() {
+  const now = Date.now();
+  if (dayStamp !== 0 && now - dayStamp > 24 * 60 * 60 * 1000) {
+    dayStamp = now;
+    daySpentWei = 0n;
+  } else if (dayStamp === 0) {
+    dayStamp = now;
+  }
+}
+
+function rateLimitedIp(ip: string): boolean {
+  const now = Date.now();
+  const hits = (ipHits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS);
+  hits.push(now);
+  ipHits.set(ip, hits);
+  // opportunistic cleanup so the map cannot grow forever
+  if (ipHits.size > 5000) {
+    for (const [k, v] of ipHits) {
+      if (v.every((t) => now - t >= WINDOW_MS)) ipHits.delete(k);
+    }
+  }
+  return hits.length > MAX_PER_IP;
+}
+
+function budgetExhausted(): boolean {
+  rollDay();
+  const cap = BigInt(
+    process.env.RELAYER_DAILY_BUDGET_WEI ?? DEFAULT_DAILY_BUDGET_WEI.toString(),
+  );
+  return daySpentWei >= cap;
+}
+
 type ClaimTuple = readonly [
   `0x${string}`,
   `0x${string}`,
@@ -81,6 +136,53 @@ export async function POST(request: Request) {
     const secretBig = BigInt(secret);
     const recipientAddr = recipient as `0x${string}`;
 
+    // --- abuse guards -------------------------------------------------
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+    if (rateLimitedIp(ip)) {
+      return NextResponse.json(
+        { error: "Too many requests. Try again in a few minutes." },
+        { status: 429 },
+      );
+    }
+
+    rollDay();
+    const attempts = (claimHits.get(claimId) ?? 0) + 1;
+    claimHits.set(claimId, attempts);
+    if (attempts > MAX_PER_CLAIM) {
+      return NextResponse.json(
+        { error: "Too many attempts on this link." },
+        { status: 429 },
+      );
+    }
+
+    if (budgetExhausted()) {
+      return NextResponse.json(
+        { error: "Relayer is out of daily gas budget. Try again tomorrow." },
+        { status: 503 },
+      );
+    }
+
+    const relayerAccount = privateKeyToAccount(
+      (process.env.RELAYER_PRIVATE_KEY ?? "0x") as `0x${string}`,
+    );
+    const relayerBalance = await publicClient.getBalance({
+      address: relayerAccount.address,
+    });
+    if (relayerBalance === 0n) {
+      console.error(
+        "[relayer] balance is zero — fund it or claims will fail:",
+        relayerAccount.address,
+      );
+      return NextResponse.json(
+        { error: "Relayer needs funding. Try again shortly." },
+        { status: 503 },
+      );
+    }
+    // -----------------------------------------------------------------
+
     const claim = (await publicClient.readContract({
       address: ESCROW_ADDRESS,
       abi: claimsAbi,
@@ -91,6 +193,8 @@ export async function POST(request: Request) {
     const [, , amount, claimHash, expiry, committed, settled] = claim;
 
     if (settled) {
+      // A settled claim must never be relayed again — this is the loop that
+      // would otherwise let one caller drain the relayer.
       return NextResponse.json(
         { error: "This link has already been claimed." },
         { status: 409 },
@@ -127,6 +231,7 @@ export async function POST(request: Request) {
     });
 
     const txs: `0x${string}`[] = [];
+    let gasSpent = 0n;
 
     if (committed === "0x0000000000000000000000000000000000000000") {
       const commitHash = await walletClient.writeContract({
@@ -137,7 +242,10 @@ export async function POST(request: Request) {
         chain: monadTestnet,
         account,
       });
-      await publicClient.waitForTransactionReceipt({ hash: commitHash });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: commitHash,
+      });
+      gasSpent += receipt.gasUsed * receipt.effectiveGasPrice;
       txs.push(commitHash);
     }
 
@@ -149,13 +257,24 @@ export async function POST(request: Request) {
       chain: monadTestnet,
       account,
     });
-    await publicClient.waitForTransactionReceipt({ hash: claimHashTx });
+    const claimReceipt = await publicClient.waitForTransactionReceipt({
+      hash: claimHashTx,
+    });
+    gasSpent += claimReceipt.gasUsed * claimReceipt.effectiveGasPrice;
     txs.push(claimHashTx);
+
+    // Count against today's budget so one caller cannot drain the relayer.
+    rollDay();
+    daySpentWei += gasSpent;
+    console.log(
+      `[relayer] claim ${claimId} relayed to ${recipientAddr}; gas ${gasSpent} wei; day total ${daySpentWei} wei`,
+    );
 
     return NextResponse.json({
       ok: true,
       recipient: recipientAddr,
       amount: amount.toString(),
+      gasSpentWei: gasSpent.toString(),
       txs,
     });
   } catch (error) {
