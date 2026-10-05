@@ -40,6 +40,10 @@ export default function SendPage() {
   const [amount, setAmount] = useState("100");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which step of the two sequential transactions we are in, so the button can
+  // explain what is happening (audit 4A: a judge watching the live demo sees
+  // the two steps instead of one long "Setting up...").
+  const [step, setStep] = useState<"idle" | "locking" | "creating">("idle");
 
   const usd = Number(amount) > 0 ? Number(amount) : 0;
   const ngn = usdToNgn(usd);
@@ -52,6 +56,7 @@ export default function SendPage() {
     if (usd <= 0) return;
     setBusy(true);
     setError(null);
+    setStep("locking");
     try {
       const amountUnits = BigInt(Math.round(usd * 10 ** STABLECOIN_DECIMALS));
 
@@ -79,6 +84,9 @@ export default function SendPage() {
         MAX_UINT256,
       );
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
+
+      // The money is locked; now create the claim link.
+      setStep("creating");
 
       // 2. Secret lives only client-side; only its hash goes on-chain.
       //    32 random bytes -> uint256 (the contract stores keccak256 of it).
@@ -113,6 +121,7 @@ export default function SendPage() {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
       setBusy(false);
+      setStep("idle");
     }
   }
 

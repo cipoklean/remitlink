@@ -66,7 +66,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-full bg-accent px-5 py-3.5 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+      className="w-full rounded-full bg-accent px-5 py-3.5 text-sm font-medium text-white transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       {children}
     </button>
@@ -87,7 +87,7 @@ export function SecondaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="w-full rounded-full border border-line bg-white/70 px-5 py-3.5 text-sm font-medium text-foreground transition-opacity disabled:opacity-50"
+      className="w-full rounded-full border border-line bg-white/70 px-5 py-3.5 text-sm font-medium text-foreground transition-opacity active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
     >
       {children}
     </button>
@@ -141,7 +141,14 @@ export function EmptyState({
 }
 
 export function Loading({ label = "Loading…" }: { label?: string }) {
+  // Soft skeleton block (audit 4A): a pulsing rounded bar in accent-soft so a
+  // slow phone never looks frozen, with the label underneath as optional text.
   return (
-    <p className="py-6 text-center text-sm text-muted">{label}</p>
+    <div className="flex flex-col items-center gap-3 py-6" role="status" aria-label={label}>
+      <div className="h-1.5 w-40 overflow-hidden rounded-full bg-accent-soft">
+        <div className="h-full w-1/2 animate-pulse rounded-full bg-accent/40" />
+      </div>
+      <p className="text-sm text-muted">{label}</p>
+    </div>
   );
 }
