@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: remitlink-indexer
+description: RemitLink claim activity (send / commit / claim / refund) on Monad testnet
+contracts:
+  - name: ClaimEscrow
+    handler: src/EventHandlers.ts
+    events:
+      - event: "ClaimCreated(uint256 indexed claimId, address indexed sender, address indexed token, uint256 amount, bytes32 claimHash, uint256 expiry)"
+      - event: "RecipientCommitted(uint256 indexed claimId, address indexed recipient)"
+      - event: "ClaimClaimed(uint256 indexed claimId, address indexed recipient, uint256 amount)"
+      - event: "ClaimRefunded(uint256 indexed claimId, address indexed sender, uint256 amount)"
+field_selection:
+  transaction_fields:
+    - hash
+chains:
+  - id: 10143 # Monad Testnet
+    start_block: 0 # HyperSync fast-forwards to the first block with our events
+    contracts:
+      - name: ClaimEscrow
+        address:
+          - 0x75b0c545F1b793200443deB06b202f5709e8eb57

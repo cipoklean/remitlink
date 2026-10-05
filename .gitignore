@@ -16,3 +16,12 @@ tsconfig.tsbuildinfo
 
 # Foundry broadcast artifacts
 broadcast/
+
+# Vercel
+.vercel
+
+# Envio HyperIndex (indexer runtime state, regenerable)
+envio/generated/
+envio/node_modules/
+envio/.env
+envio/pnpm-lock.yaml

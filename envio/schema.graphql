@@ -1,0 +1,15 @@
+type Claim {
+  id: ID!
+  sender: String!
+  token: String!
+  amount: BigInt!
+  claimHash: String!
+  expiry: BigInt!
+  status: String! # created | committed | claimed | refunded
+  recipient: String
+  createdAtBlock: BigInt!
+  createdAtTimestamp: BigInt!
+  settledAtBlock: BigInt
+  settledAtTimestamp: BigInt
+  txHash: String!
+}
