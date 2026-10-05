@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createWalletClient, http, parseEther } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { normalizePrivateKey } from "@/lib/key";
 import { monadTestnet, publicClient } from "@/lib/chain";
 
 /**
@@ -72,13 +73,21 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const key = process.env.RELAYER_PRIVATE_KEY;
-    if (!key) {
+    const keyRaw = process.env.RELAYER_PRIVATE_KEY;
+    if (!keyRaw) {
       return NextResponse.json(
         { error: "Gas top-up is not available on this deployment." },
         { status: 501 },
       );
     }
+    const keyNorm = normalizePrivateKey(keyRaw);
+    if (!keyNorm.ok) {
+      return NextResponse.json(
+        { error: `RELAYER_PRIVATE_KEY is not usable: ${keyNorm.error}.` },
+        { status: 501 },
+      );
+    }
+    const key = keyNorm.key;
 
     const body = (await request.json()) as { address?: string };
     const address = body.address;

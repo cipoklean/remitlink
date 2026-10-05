@@ -7,6 +7,7 @@ import {
   parseUnits,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { normalizePrivateKey } from "@/lib/key";
 import {
   STABLECOIN_ADDRESS,
   STABLECOIN_DECIMALS,
@@ -86,8 +87,8 @@ export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
-    const key = process.env.TREASURY_PRIVATE_KEY;
-    if (!key) {
+    const raw = process.env.TREASURY_PRIVATE_KEY;
+    if (!raw) {
       return NextResponse.json(
         {
           error:
@@ -96,6 +97,16 @@ export async function POST(request: Request) {
         { status: 501 },
       );
     }
+    const keyNorm = normalizePrivateKey(raw);
+    if (!keyNorm.ok) {
+      return NextResponse.json(
+        {
+          error: `TREASURY_PRIVATE_KEY is not usable: ${keyNorm.error}.`,
+        },
+        { status: 501 },
+      );
+    }
+    const key = keyNorm.key;
 
     const body = (await request.json()) as { address?: string };
     const address = body.address;

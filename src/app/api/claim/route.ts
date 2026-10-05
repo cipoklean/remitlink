@@ -9,6 +9,7 @@ import {
   toHex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { normalizePrivateKey } from "@/lib/key";
 import { monadTestnet } from "viem/chains";
 import { CHAIN_ID, ESCROW_ADDRESS, publicClient } from "@/lib/chain";
 
@@ -110,13 +111,23 @@ type ClaimTuple = readonly [
 
 export async function POST(request: Request) {
   try {
-    const relayerKey = process.env.RELAYER_PRIVATE_KEY;
-    if (!relayerKey) {
+    const relayerKeyRaw = process.env.RELAYER_PRIVATE_KEY;
+    if (!relayerKeyRaw) {
       return NextResponse.json(
         { error: "Relayer not configured (RELAYER_PRIVATE_KEY missing)." },
         { status: 500 },
       );
     }
+    const relayerKeyNorm = normalizePrivateKey(relayerKeyRaw);
+    if (!relayerKeyNorm.ok) {
+      return NextResponse.json(
+        {
+          error: `RELAYER_PRIVATE_KEY is not usable: ${relayerKeyNorm.error}.`,
+        },
+        { status: 500 },
+      );
+    }
+    const relayerKey = relayerKeyNorm.key;
 
     const body = (await request.json()) as {
       claimId?: string;
@@ -165,9 +176,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const relayerAccount = privateKeyToAccount(
-      (process.env.RELAYER_PRIVATE_KEY ?? "0x") as `0x${string}`,
-    );
+    const relayerAccount = privateKeyToAccount(relayerKey);
     const relayerBalance = await publicClient.getBalance({
       address: relayerAccount.address,
     });
