@@ -287,6 +287,14 @@ export default function ClaimPage() {
           <PrimaryButton onClick={() => undefined}>Money sent to you</PrimaryButton>
         ) : (
           <>
+            {txHash ? (
+              <Link
+                href={`/cashout?usd=${usd.toFixed(2)}`}
+                className="block w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white"
+              >
+                Cash out to your bank
+              </Link>
+            ) : null}
             <PrimaryButton
               disabled={
                 !secret ||
