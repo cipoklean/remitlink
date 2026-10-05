@@ -23,20 +23,24 @@ export default function SharePage() {
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
   const router = useRouter();
-  const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyResult | null>(null);
   const [usd, setUsd] = useState<number | null>(null);
 
-  useEffect(() => {
+  // The claim link is rebuilt from the sessionStorage secret (left by the send
+  // screen) plus the claim id. Both are stable for this mount, so it is a lazy
+  // initializer rather than a synchronous setState in an effect (audit 9).
+  // The secret travels in the URL FRAGMENT (#) - browsers never send it to a
+  // server, so it cannot leak into server logs or analytics.
+  const [link] = useState<string | null>(() => {
+    if (typeof window === "undefined" || !claimId) return null;
     const secret = sessionStorage.getItem(`secret:${claimId}`);
-    if (secret) {
-      const origin = window.location.origin;
-      // Secret goes in the URL FRAGMENT (#) - browsers never send it to a
-      // server, so it cannot leak into server logs or analytics.
-      setLink(`${origin}/claim/${claimId}#${secret}`);
-    }
+    if (!secret) return null;
+    return `${window.location.origin}/claim/${claimId}#${secret}`;
+  });
 
-    // Read the escrowed amount so the sender sees the real figure.
+  // Read the escrowed amount so the sender sees the real figure. The setState
+  // happens in the async .then callback, not the effect body.
+  useEffect(() => {
     if (!claimId) return;
     publicClient
       .readContract({

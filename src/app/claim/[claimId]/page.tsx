@@ -64,7 +64,16 @@ export default function ClaimPage() {
   const sponsored = useSponsoredSend();
   const address = sponsored.address;
 
-  const [secret, setSecret] = useState<string | null>(null);
+  // The secret lives in the URL fragment, which browsers never transmit. Read it
+  // once on mount via a lazy initializer (audit 9: no synchronous setState in an
+  // effect) from the fragment, falling back to the sessionStorage value the send
+  // screen left behind.
+  const [secret] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const fromHash = window.location.hash.replace(/^#/, "").trim();
+    if (fromHash) return fromHash;
+    return sessionStorage.getItem(`secret:${claimId}`);
+  });
   const [claim, setClaim] = useState<ClaimData | null>(null);
   const [status, setStatus] = useState<
     "idle" | "authing" | "wallet" | "committing" | "claiming" | "done"
@@ -72,16 +81,11 @@ export default function ClaimPage() {
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
-
-  // The secret lives in the URL fragment, which browsers never transmit.
-  useEffect(() => {
-    const fromHash = window.location.hash.replace(/^#/, "").trim();
-    if (fromHash) {
-      setSecret(fromHash);
-      return;
-    }
-    setSecret(sessionStorage.getItem(`secret:${claimId}`));
-  }, [claimId]);
+  // "Now" as a state value, not a Date.now() call in the render body: the
+  // "expired" flag is derived from it. Seeded from the clock when the claim loads
+  // (audit 9: impure Date.now() during render), so the flag is correct without an
+  // impure render and updates as new claims are read.
+  const [nowSec, setNowSec] = useState<number>(0);
 
   const loadClaim = useCallback(async () => {
     try {
@@ -105,6 +109,7 @@ export default function ClaimPage() {
         expiry: raw[4],
         recipient: raw[5],
       });
+      setNowSec(Math.floor(Date.now() / 1000));
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Could not read this claim link.",
@@ -114,11 +119,17 @@ export default function ClaimPage() {
 
   useEffect(() => {
     if (!claimId) return;
+    // loadClaim is an async contract read that setStates inside its .then, i.e.
+    // the "subscribe to an external system" pattern the rule allows. It is flagged
+    // only because the call is synchronous in the body. Left as a reasoned
+    // disable: restructuring the mount-time data fetch risks the claim flow.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async data fetch
     void loadClaim();
   }, [claimId, loadClaim]);
 
-  const expired =
-    claim !== null && claim.expiry <= BigInt(Math.floor(Date.now() / 1000));
+  // Derived from nowSec (seeded when the claim loads), not Date.now() in render.
+  // While no claim is loaded, claim is null and this is false.
+  const expired = claim !== null && claim.expiry <= BigInt(nowSec);
 
   /**
    * Relay the claim: our server pays the gas so a first-time recipient needs
@@ -185,6 +196,11 @@ export default function ClaimPage() {
 
   useEffect(() => {
     if (status === "wallet" && address && secret && !error) {
+      // Auto-run the claim once the embedded wallet is ready. runClaim setStates
+      // inside its async body (the rule's allowed "subscribe to external system"
+      // case); the call is only flagged because it is synchronous here. Reasoned
+      // disable: this is the critical claim path and is not restructured.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async claim action
       void runClaim();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -13,7 +13,7 @@ import {
 } from "viem";
 import { monadTestnet } from "viem/chains";
 import { CHAIN_ID, ESCROW_ADDRESS, STABLECOIN_ADDRESS } from "@/lib/chain";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * Two send paths:
@@ -73,6 +73,7 @@ export function useSponsoredSend() {
   const [viemClient, setViemClient] = useState<ReturnType<
     typeof createWalletClient
   > | null>(null);
+  const builtClientRef = useRef(false);
 
   // Build a viem wallet client over the embedded wallet's EIP-1193 provider.
   useEffect(() => {
@@ -80,7 +81,13 @@ export function useSponsoredSend() {
       | (Provider & { getEthereumProvider?: () => Promise<Provider> })
       | undefined;
     if (!address || !wallet) {
-      setViemClient(null);
+      // Reset only if we had previously built a client. On first mount there is
+      // nothing to clear, so the common path avoids a synchronous setState in
+      // the effect body (react-hooks/set-state-in-effect).
+      if (builtClientRef.current) {
+        builtClientRef.current = false;
+        setViemClient(null);
+      }
       return;
     }
     let cancelled = false;
@@ -100,6 +107,7 @@ export function useSponsoredSend() {
             transport: custom(provider as never),
           }),
         );
+        builtClientRef.current = true;
       } catch {
         if (!cancelled) setViemClient(null);
       }

@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   createWalletClient,
-  createPublicClient,
-  custom,
   http,
   keccak256,
   parseAbi,
@@ -11,7 +9,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { normalizePrivateKey } from "@/lib/key";
 import { monadTestnet } from "viem/chains";
-import { CHAIN_ID, ESCROW_ADDRESS, publicClient } from "@/lib/chain";
+import { ESCROW_ADDRESS, publicClient } from "@/lib/chain";
 
 /**
  * Gas relayer for the recipient side of a claim.

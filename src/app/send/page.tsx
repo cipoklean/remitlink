@@ -17,9 +17,7 @@ import {
   ESCROW_ADDRESS,
   STABLECOIN_ADDRESS,
   STABLECOIN_DECIMALS,
-  erc20Abi,
   escrowAbi,
-  monadTestnet,
   publicClient,
 } from "@/lib/chain";
 import {

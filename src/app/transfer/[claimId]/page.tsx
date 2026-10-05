@@ -77,6 +77,16 @@ export default function TransferPage() {
   const [refundMsg, setRefundMsg] = useState<string | null>(null);
   const [refundHash, setRefundHash] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<TransferMetrics | null>(null);
+  // Clock as state (audit 9: Date.now() during render is impure). Seeded from the
+  // clock via the initializer; the effect only owns the 30s interval that keeps
+  // "hours left" live. The interval callback (not the effect body) is what calls
+  // setState, which is the pattern react-hooks wants.
+  const [nowSec, setNowSec] = useState<number>(() => Math.floor(Date.now() / 1000));
+
+  useEffect(() => {
+    const id = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Measured proof (AGENT.md 7b B1): real block timestamps and real gas from the
   // createClaim receipt. Null values render as "not measurable" rather than a
@@ -155,10 +165,10 @@ export default function TransferPage() {
 
   if (missing || !state) return <Missing />;
 
-  const nowSec = BigInt(Math.floor(Date.now() / 1000));
-  const expired = nowSec > state.expiry;
+  const nowBig = BigInt(nowSec);
+  const expired = nowBig > state.expiry;
   const claimed = state.settled && !expired;
-  const hoursLeft = Math.max(1, Math.ceil(Number(state.expiry - nowSec) / 3600));
+  const hoursLeft = Math.max(1, Math.ceil(Number(state.expiry - nowBig) / 3600));
 
   const status = claimed
     ? "Claimed"

@@ -41,7 +41,7 @@ function friendlyAuthError(e: unknown): string {
 
 function SignInPanel() {
   const router = useRouter();
-  const { ready, user, logout } = usePrivy();
+  const { ready, user } = usePrivy();
   const [error, setError] = useState<string | null>(null);
 
   const { loginWithPasskey } = useLoginWithPasskey({
