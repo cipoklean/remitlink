@@ -12,6 +12,7 @@ import {
   publicClient,
 } from "@/lib/chain";
 import { CORRIDOR } from "@/lib/corridor";
+import { copyText, type CopyResult } from "@/lib/copy";
 
 export default function HomePage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function HomePage() {
   const { createWallet } = useCreateWallet();
   const [balance, setBalance] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<CopyResult | null>(null);
   const [creating, setCreating] = useState(false);
 
   const address = (wallets ?? [])[0]?.address;
@@ -127,18 +128,21 @@ export default function HomePage() {
           <p className="text-xs text-muted">Your account address</p>
           <button
             type="button"
-            onClick={() => {
-              navigator.clipboard
-                ?.writeText(address)
-                .then(() => setCopied(true))
-                .catch(() => setCopied(false));
+            onClick={async () => {
+              const result = await copyText(address);
+              setCopied(result);
+              setTimeout(() => setCopied(null), 2500);
             }}
             className="mt-1 w-full break-all text-left font-mono text-xs text-foreground"
           >
             {address}
           </button>
           <p className="mt-1 text-xs text-muted">
-            {copied ? "Copied ✓" : "Tap to copy"}
+            {copied === "copied"
+              ? "Copied ✓"
+              : copied === "failed"
+                ? "Copy failed — long-press to copy"
+                : "Tap to copy"}
           </p>
         </Card>
       ) : null}

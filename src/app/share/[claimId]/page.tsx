@@ -19,12 +19,13 @@ import {
   publicClient,
 } from "@/lib/chain";
 import { CORRIDOR, formatNgn, usdToNgn } from "@/lib/corridor";
+import { copyText, type CopyResult } from "@/lib/copy";
 
 export default function SharePage() {
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
   const [link, setLink] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<CopyResult | null>(null);
   const [amount, setAmount] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,13 +66,9 @@ export default function SharePage() {
 
   async function copyLink() {
     if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setCopied(false);
-    }
+    const result = await copyText(link);
+    setCopied(result);
+    setTimeout(() => setCopied(null), 2500);
   }
 
   return (
@@ -111,7 +108,11 @@ export default function SharePage() {
 
           <div className="mt-4 flex flex-col gap-3">
             <PrimaryButton onClick={copyLink}>
-              {copied ? "Copied ✓" : "Copy link"}
+              {copied === "copied"
+                ? "Copied ✓"
+                : copied === "failed"
+                  ? "Copy failed — long-press to select"
+                  : "Copy link"}
             </PrimaryButton>
             {whatsapp ? (
               <a
