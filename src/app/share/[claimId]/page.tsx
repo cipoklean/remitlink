@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import {
   Card,
-  Loading,
-  Notice,
   PrimaryButton,
   SecondaryButton,
   Shell,
@@ -24,9 +22,10 @@ import { copyText, type CopyResult } from "@/lib/copy";
 export default function SharePage() {
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
+  const router = useRouter();
   const [link, setLink] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyResult | null>(null);
-  const [amount, setAmount] = useState<string | null>(null);
+  const [usd, setUsd] = useState<number | null>(null);
 
   useEffect(() => {
     const secret = sessionStorage.getItem(`secret:${claimId}`);
@@ -48,19 +47,14 @@ export default function SharePage() {
       })
       .then((raw) => {
         const value = (raw as readonly unknown[])[2] as bigint;
-        setAmount(
-          `$${formatUnits(value, STABLECOIN_DECIMALS).replace(
-            /\B(?=(\d{3})+(?!\d))/g,
-            ",",
-          )}`,
-        );
+        setUsd(Number(formatUnits(value, STABLECOIN_DECIMALS)));
       })
-      .catch(() => setAmount(null));
+      .catch(() => setUsd(null));
   }, [claimId]);
 
   const whatsapp = link
     ? `https://wa.me/?text=${encodeURIComponent(
-        `You sent me money. Tap to claim it: ${link}`,
+        `I sent you ${usd !== null ? `$${usd.toLocaleString("en-US")}` : "money"}. Tap to claim it: ${link}`,
       )}`
     : null;
 
@@ -78,24 +72,27 @@ export default function SharePage() {
       back={{ href: "/home", label: "Home" }}
     >
       {!link ? (
-        <>
-          <Loading label="Building your link…" />
-          <Notice>
-            If this stays empty, the link was opened on a different device. Go back
-            and create a new one from the device where you sent the money.
-          </Notice>
-        </>
+        <Card>
+          <p className="text-sm text-foreground">
+            This link was created on another device, so the secret is not here.
+          </p>
+          <p className="mt-2 text-xs text-muted">
+            Open the claim link on the device where you sent the money, or go
+            back and create a fresh link from this device.
+          </p>
+        </Card>
       ) : (
         <>
           <Card>
             <p className="text-xs text-muted">Amount</p>
             <p className="mt-1 font-serif text-2xl">
-              {amount ?? `Claim link #${claimId}`}
+              {usd !== null
+                ? `$${usd.toLocaleString("en-US")}`
+                : `Claim link #${claimId}`}
             </p>
-            {amount ? (
+            {usd !== null ? (
               <p className="mt-1 text-xs text-muted">
-                About {formatNgn(usdToNgn(Number(amount.replace(/[$,]/g, ""))))}{" "}
-                received
+                About {formatNgn(usdToNgn(usd))} received
               </p>
             ) : (
               <p className="mt-1 text-xs text-muted">Link #{claimId}</p>
@@ -127,7 +124,7 @@ export default function SharePage() {
             <SecondaryButton
               onClick={() => {
                 sessionStorage.removeItem(`secret:${claimId}`);
-                window.location.href = `/transfer/${claimId}`;
+                router.push(`/transfer/${claimId}`);
               }}
             >
               Track this transfer
@@ -135,7 +132,7 @@ export default function SharePage() {
             <SecondaryButton
               onClick={() => {
                 sessionStorage.removeItem(`secret:${claimId}`);
-                window.location.href = "/home";
+                router.push("/home");
               }}
             >
               Done

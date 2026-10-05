@@ -28,8 +28,46 @@ export default function HomePage() {
 const [dripping, setDripping] = useState(false);
 const [dripHash, setDripHash] = useState<string | null>(null);
 const [dripError, setDripError] = useState<string | null>(null);
+const [claimLink, setClaimLink] = useState("");
+const [claimError, setClaimError] = useState<string | null>(null);
 
   const address = (wallets ?? [])[0]?.address;
+
+  useEffect(() => {
+    if (ready && !user) router.replace("/");
+  }, [ready, user, router]);
+
+  useEffect(() => {
+    if (!ready || !user || !address) return;
+
+    let cancelled = false;
+    publicClient
+      .readContract({
+        address: STABLECOIN_ADDRESS,
+        abi: [
+          {
+            name: "balanceOf",
+            type: "function",
+            stateMutability: "view",
+            inputs: [{ name: "owner", type: "address" }],
+            outputs: [{ type: "uint256" }],
+          },
+        ],
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
+      })
+      .then((v) => {
+        if (!cancelled) {
+          setBalance(formatUnits(v, STABLECOIN_DECIMALS));
+        }
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, user, address]);
 
   // Users who signed in before embedded-wallet creation was enabled have no
   // wallet. Offer to create one rather than silently rendering nothing.
@@ -73,44 +111,32 @@ const [dripError, setDripError] = useState<string | null>(null);
     );
   }
 
-  useEffect(() => {
-    if (ready && !user) router.replace("/");
-  }, [ready, user, router]);
-
-  useEffect(() => {
-    if (!ready || !user || !address) return;
-
-    let cancelled = false;
-    publicClient
-      .readContract({
-        address: STABLECOIN_ADDRESS,
-        abi: [
-          {
-            name: "balanceOf",
-            type: "function",
-            stateMutability: "view",
-            inputs: [{ name: "owner", type: "address" }],
-            outputs: [{ type: "uint256" }],
-          },
-        ],
-        functionName: "balanceOf",
-        args: [address as `0x${string}`],
-      })
-      .then((v) => {
-        if (!cancelled) {
-          setBalance(formatUnits(v, STABLECOIN_DECIMALS));
-        }
-      })
-      .catch((e: unknown) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Unknown error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, user, address]);
-
   if (!ready) return <Shell title="RemitLink"><Loading /></Shell>;
   if (!user) return null;
+
+  /**
+   * Finding 2: the recipient who signed in and wants to claim already holds the
+   * full link, which includes the secret after the #. Extract both the claim id
+   * and the secret, stash the secret for the claim page, and route there. Falls
+   * back to a bare "/claim/<id>" if the paste has no fragment.
+   */
+  function openClaim() {
+    const pasted = claimLink.trim();
+    setClaimError(null);
+    if (!pasted) {
+      setClaimError("Paste the claim link you were sent, then tap Claim.");
+      return;
+    }
+    const m = pasted.match(/\/claim\/(\d+)(?:#(.*))?$/);
+    if (!m) {
+      setClaimError("That does not look like a claim link.");
+      return;
+    }
+    const id = m[1];
+    if (m[2]) sessionStorage.setItem(`secret:${id}`, m[2]);
+    setClaimLink("");
+    router.push(`/claim/${id}`);
+  }
 
   return (
     <Shell title="Your account" subtitle={`Sending to ${CORRIDOR.to}`}>
@@ -227,13 +253,33 @@ const [dripError, setDripError] = useState<string | null>(null);
         >
           Activity
         </Link>
-        <Link
-          href="/claim/0"
-          className="text-center text-xs text-muted underline-offset-4 hover:underline"
-        >
-          I have a link to claim
-        </Link>
       </div>
+
+      <Card className="mt-4">
+        <p className="text-xs text-muted">I have a link to claim</p>
+        <input
+          type="text"
+          inputMode="url"
+          value={claimLink}
+          onChange={(e) => setClaimLink(e.target.value)}
+          placeholder="https://remitlink.vercel.app/claim/123#secret"
+          className="mt-1 w-full rounded-xl border border-line bg-white/70 px-3 py-2 font-mono text-xs outline-none focus:border-accent"
+        />
+        <button
+          type="button"
+          onClick={openClaim}
+          className="mt-3 w-full rounded-full border border-line bg-white px-5 py-3 text-sm font-medium disabled:opacity-50"
+        >
+          Claim
+        </button>
+        {claimError ? (
+          <p className="mt-2 text-xs text-red-600">{claimError}</p>
+        ) : (
+          <p className="mt-2 text-xs text-muted">
+            Paste the whole link, including the part after #.
+          </p>
+        )}
+      </Card>
     </Shell>
   );
 }

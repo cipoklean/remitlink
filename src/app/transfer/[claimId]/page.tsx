@@ -49,7 +49,7 @@ function shorten(a: string) {
 }
 
 function when(ts: bigint) {
-  return new Date(Date.now() && Number(ts) * 1000).toLocaleString(undefined, {
+  return new Date(Number(ts) * 1000).toLocaleString(undefined, {
     dateStyle: "medium",
     timeStyle: "short",
   });
