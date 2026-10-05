@@ -12,7 +12,7 @@ eth_getLogs is limited to a 100 range
 ```
 
 Reading history straight from the contract would mean querying from block `0`
-across ~68 million blocks in 100-block windows — roughly 680,000 requests. So the
+across ~68 million blocks in 100-block windows - roughly 680,000 requests. So the
 Activity screen queries this indexer instead. See `src/lib/envio.ts` for the
 client and the full explanation.
 
@@ -32,9 +32,9 @@ claims are never overwritten, so a re-run or chain re-org cannot corrupt data.
 
 ## Files
 
-- `config.yaml` — chain `10143`, ClaimEscrow address, the four events
-- `schema.graphql` — the `Claim` entity
-- `src/EventHandlers.ts` — the handlers
+- `config.yaml` - chain `10143`, ClaimEscrow address, the four events
+- `schema.graphql` - the `Claim` entity
+- `src/EventHandlers.ts` - the handlers
 
 ## Run locally
 
@@ -60,5 +60,5 @@ Hosted on Envio Cloud (`cipoklean/remitlink-indexer`, branch `main`, config
 `envio/config.yaml`). The app reads it via `NEXT_PUBLIC_ENVIO_GRAPHQL_URL`.
 
 > Note: `config.yaml` uses the current `chains[].contracts[].address` schema.
-> Older docs — including Monad's own page — show a `networks:` form that the
+> Older docs - including Monad's own page - show a `networks:` form that the
 > current CLI rejects.

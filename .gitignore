@@ -20,7 +20,7 @@ broadcast/
 # Vercel
 .vercel
 
-# AGENT.md — internal agent working memory, not part of the submission repo.
+# AGENT.md - internal agent working memory, not part of the submission repo.
 # NOTE: it is already in git history (committed before this rule), so previous
 # commits still carry it. The local copy at ~/remitlink/AGENT.md is unaffected.
 AGENT.md

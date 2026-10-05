@@ -22,12 +22,12 @@
     }
   },
   "superseded": {
-    "ClaimEscrow_0x4232820bf5c0d76ae01f9a913548a4de8623b97b": "First escrow deploy — superseded because the mock token was constructed outside vm.startBroadcast and so was never actually deployed. Left on-chain unused.",
-    "MockStablecoin_0x4e932FdbDd875a0610f03E8f9d58ce85CE3b55E0": "tUSD — our own 6-decimal mock ERC-20. Replaced by real Circle USDC above. Not used by the app any more."
+    "ClaimEscrow_0x4232820bf5c0d76ae01f9a913548a4de8623b97b": "First escrow deploy - superseded because the mock token was constructed outside vm.startBroadcast and so was never actually deployed. Left on-chain unused.",
+    "MockStablecoin_0x4e932FdbDd875a0610f03E8f9d58ce85CE3b55E0": "tUSD - our own 6-decimal mock ERC-20. Replaced by real Circle USDC above. Not used by the app any more."
   },
   "unverified": [
-    "Contract source verification on the explorer is NOT done — needs a Monadscan/MonadVision API key (owner action).",
+    "Contract source verification on the explorer is NOT done - needs a Monadscan/MonadVision API key (owner action).",
     "Envio indexer not yet configured for ClaimCreated/ClaimClaimed events.",
-    "AUSD has NO Monad testnet deployment (eth_getCode at 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a returns 0x, verified twice). Open risk for the Agora bounty — see AGENT.md section 6."
+    "AUSD has NO Monad testnet deployment (eth_getCode at 0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a returns 0x, verified twice). Open risk for the Agora bounty - see AGENT.md section 6."
   ]
 }

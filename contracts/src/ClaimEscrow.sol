@@ -5,7 +5,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
-/// @title ClaimEscrow — RemitLink
+/// @title ClaimEscrow - RemitLink
 /// @notice Escrows a stablecoin deposit behind a shareable claim link.
 ///
 /// @dev Secret-handling choice (AGENT.md spec 5.1 requires choosing + documenting):
@@ -21,10 +21,10 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 ///
 ///      Why commit first: the secret appears in calldata at reveal time, so a
 ///      mempool watcher can copy it. Because the payout address is already locked
-///      before reveal, a copied secret is worthless — it can only ever pay the
+///      before reveal, a copied secret is worthless - it can only ever pay the
 ///      committed recipient. This is why a signature-only design was rejected:
 ///      with no off-chain secret the "authorization" is publicly computable, so
-///      anyone could sign and claim their own funds (caught by a failing test —
+///      anyone could sign and claim their own funds (caught by a failing test -
 ///      see the 2026-10-04 decision-log entry).
 ///
 ///      Known limitation (documented, not hidden): because commitment is final,
