@@ -8,6 +8,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalizePrivateKey } from "@/lib/key";
+import { requireSameOrigin } from "@/lib/origin";
 import {
   STABLECOIN_ADDRESS,
   STABLECOIN_DECIMALS,
@@ -98,6 +99,10 @@ function inCooldown(address: string): boolean {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Same-origin guard: reject cross-site browser POSTs before any gas is moved.
+  const denied = requireSameOrigin(request);
+  if (denied) return denied;
+
   try {
     const raw = process.env.TREASURY_PRIVATE_KEY;
     if (!raw) {
@@ -120,9 +125,21 @@ export async function POST(request: Request) {
     }
     const key = keyNorm.key;
 
-    const body = (await request.json()) as { address?: string };
-    const address = body.address;
-    if (!address || !/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    let body: { address?: unknown };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return NextResponse.json(
+        { error: "The request body is not valid JSON." },
+        { status: 400 },
+      );
+    }
+    const address =
+      typeof body.address === "string" &&
+      /^0x[a-fA-F0-9]{40}$/.test(body.address)
+        ? (body.address as `0x${string}`)
+        : null;
+    if (!address) {
       return NextResponse.json(
         { error: "A valid address is required." },
         { status: 400 },

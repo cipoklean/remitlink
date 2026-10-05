@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createWalletClient, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalizePrivateKey } from "@/lib/key";
+import { requireSameOrigin } from "@/lib/origin";
 import { ESCROW_ADDRESS, monadTestnet, publicClient } from "@/lib/chain";
 
 /**
@@ -62,6 +63,10 @@ function rateLimitedIp(ip: string): boolean {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  // Same-origin guard: reject cross-site browser POSTs before any gas or reads.
+  const denied = requireSameOrigin(request);
+  if (denied) return denied;
+
   try {
     const keyRaw = process.env.RELAYER_PRIVATE_KEY;
     if (!keyRaw) {
@@ -79,8 +84,16 @@ export async function POST(request: Request) {
     }
     const key = keyNorm.key;
 
-    const body = (await request.json()) as { claimId?: string };
-    if (!body.claimId || !/^\d+$/.test(body.claimId)) {
+    let body: { claimId?: unknown };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return NextResponse.json(
+        { error: "The request body is not valid JSON." },
+        { status: 400 },
+      );
+    }
+    if (typeof body.claimId !== "string" || !/^\d+$/.test(body.claimId)) {
       return NextResponse.json(
         { error: "claimId is required." },
         { status: 400 },

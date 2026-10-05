@@ -8,6 +8,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { normalizePrivateKey } from "@/lib/key";
+import { requireSameOrigin } from "@/lib/origin";
 import { monadTestnet } from "viem/chains";
 import { ESCROW_ADDRESS, publicClient } from "@/lib/chain";
 
@@ -108,6 +109,11 @@ type ClaimTuple = readonly [
 ];
 
 export async function POST(request: Request) {
+  // Same-origin guard first: a cross-site browser POST (Origin: evil.example)
+  // is rejected before any gas, chain read, or secret work happens.
+  const denied = requireSameOrigin(request);
+  if (denied) return denied;
+
   try {
     const relayerKeyRaw = process.env.RELAYER_PRIVATE_KEY;
     if (!relayerKeyRaw) {
@@ -127,23 +133,47 @@ export async function POST(request: Request) {
     }
     const relayerKey = relayerKeyNorm.key;
 
-    const body = (await request.json()) as {
-      claimId?: string;
-      secret?: string;
-      recipient?: string;
+    // Parse the body safely: malformed JSON used to throw into the catch and
+    // become a 500. Now it is a plain 400.
+    let body: { claimId?: unknown; secret?: unknown; recipient?: unknown };
+    try {
+      body = (await request.json()) as typeof body;
+    } catch {
+      return NextResponse.json(
+        { error: "The request body is not valid JSON." },
+        { status: 400 },
+      );
+    }
+
+    // Validate input shapes BEFORE touching the chain. claimId and secret are
+    // uint256 values; recipient must be an address. BigInt("abc") used to
+    // throw an uncaught 500; now every malformed field is a 400.
+    const MAX_UINT256 = (1n << 256n) - 1n;
+    const asUint256 = (value: unknown): string | null => {
+      if (typeof value !== "string" || !/^\d+$/.test(value)) return null;
+      const n = BigInt(value);
+      return n <= MAX_UINT256 ? value : null;
     };
-    const { claimId, secret, recipient } = body;
+    const claimId = asUint256(body.claimId);
+    const secret = asUint256(body.secret);
+    const recipient =
+      typeof body.recipient === "string" && /^0x[a-fA-F0-9]{40}$/.test(body.recipient)
+        ? (body.recipient as `0x${string}`)
+        : null;
 
     if (!claimId || !secret || !recipient) {
       return NextResponse.json(
-        { error: "claimId, secret and recipient are required." },
+        {
+          error:
+            "claimId and secret must be whole numbers, and a valid account address is required.",
+        },
         { status: 400 },
       );
     }
 
     const claimIdBig = BigInt(claimId);
     const secretBig = BigInt(secret);
-    const recipientAddr = recipient as `0x${string}`;
+    const recipientAddr = recipient;
 
     // --- abuse guards -------------------------------------------------
     const ip =
