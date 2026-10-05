@@ -20,6 +20,11 @@ import {
   publicClient,
 } from "@/lib/chain";
 import { copyText, type CopyResult } from "@/lib/copy";
+import {
+  humanDuration,
+  loadMetrics,
+  type TransferMetrics,
+} from "@/lib/metrics";
 
 /**
  * Transfer status (AGENT.md section 7b, item A3): what state is this transfer
@@ -71,6 +76,15 @@ export default function TransferPage() {
   const [refunding, setRefunding] = useState(false);
   const [refundMsg, setRefundMsg] = useState<string | null>(null);
   const [refundHash, setRefundHash] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<TransferMetrics | null>(null);
+
+  // Measured proof (AGENT.md 7b B1): real block timestamps and real gas from the
+  // createClaim receipt. Null values render as "not measurable" rather than a
+  // made-up number.
+  useEffect(() => {
+    if (!claimId) return;
+    loadMetrics(claimId).then(setMetrics).catch(() => setMetrics(null));
+  }, [claimId]);
 
   useEffect(() => {
     if (!claimId) return;
@@ -203,6 +217,32 @@ export default function TransferPage() {
               : "Copy claim link"}
         </button>
       </Card>
+
+      {metrics && !metrics.unavailable ? (
+        <Card className="mt-4">
+          <p className="text-xs text-muted">Measured on Monad</p>
+          <dl className="mt-2 space-y-2 text-sm">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-muted">Time to settle</dt>
+              <dd className="text-xs font-medium">
+                {metrics.settleSeconds !== null
+                  ? humanDuration(metrics.settleSeconds)
+                  : "not settled yet"}
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-muted">Network fee paid</dt>
+              <dd className="font-mono text-xs">
+                {metrics.feeMon !== null ? `${metrics.feeMon} MON` : "—"}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-muted">
+            Read from block timestamps and the gas actually used — not an
+            estimate.
+          </p>
+        </Card>
+      ) : null}
 
       {state.settled ? null : (
         <Card className="mt-4">
