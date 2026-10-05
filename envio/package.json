@@ -1,0 +1,19 @@
+{
+  "name": "remitlink-indexer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "RemitLink claim activity indexer (Envio HyperIndex) on Monad testnet",
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "build": "envio build"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "envio": "^3.12.1"
+  }
+}
