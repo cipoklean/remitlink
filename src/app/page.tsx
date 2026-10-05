@@ -8,7 +8,14 @@ import {
   useSignupWithPasskey,
 } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { CORRIDOR, formatNgn, formatUsd, usdToNgn } from "@/lib/corridor";
+import {
+  CORRIDOR,
+  FEE_QUOTES,
+  formatNgn,
+  formatUsd,
+  quoteFee,
+  usdToNgn,
+} from "@/lib/corridor";
 import {
   Loading,
   MockBadge,
@@ -61,7 +68,7 @@ function SignInPanel() {
         First time here? Create an account
       </SecondaryButton>
       <p className="mt-1 text-center text-xs text-muted">
-        Your face or fingerprint is your account. No passwords, no forms.
+        Your fingerprint or face is your account. No passwords, no forms.
       </p>
       {error ? (
         <div className="mt-3">
@@ -103,8 +110,8 @@ export default function Page() {
           <span className="italic text-accent">without the runaround.</span>
         </h1>
         <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
-          Sign in with your face. Send dollars. Share one link. They claim it with
-          their own passkey — no account, no app, no forms.
+          Sign in with your fingerprint or face. Send dollars. Share one link.
+          They claim it with their own passkey — no account, no app, no forms.
         </p>
       </div>
 
@@ -117,6 +124,38 @@ export default function Page() {
             {formatNgn(usdToNgn(sampleUsd))}
           </span>{" "}
           <MockBadge label="MOCK RATE" />
+        </p>
+      </div>
+
+      {/* Fee comparison above the fold: the pitch should land in five seconds. */}
+      <div className="mt-3 rounded-2xl border border-line bg-white/70 p-5">
+        <p className="text-xs text-muted">Sending {formatUsd(sampleUsd)} today</p>
+        <div className="mt-2 space-y-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm text-muted">Typical bank wire</span>
+            <span className="font-mono text-sm text-muted line-through">
+              {formatUsd(quoteFee(FEE_QUOTES[1], sampleUsd))}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-medium">With RemitLink</span>
+            <span className="font-mono text-sm font-medium text-accent">
+              {formatUsd(quoteFee(FEE_QUOTES[0], sampleUsd))}
+            </span>
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          You save about{" "}
+          <span className="font-medium text-accent">
+            {formatUsd(
+              Math.max(
+                0,
+                quoteFee(FEE_QUOTES[1], sampleUsd) -
+                  quoteFee(FEE_QUOTES[0], sampleUsd),
+              ),
+            )}
+          </span>{" "}
+          · typical fees, illustrative
         </p>
       </div>
 

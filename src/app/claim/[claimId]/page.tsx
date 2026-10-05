@@ -220,7 +220,7 @@ export default function ClaimPage() {
   const usd = claim ? Number(formatUnits(claim.amount, STABLECOIN_DECIMALS)) : 0;
 
   return (
-    <Shell title="You received money" subtitle="No forms. Your face is your account.">
+    <Shell title="You received money" subtitle="No forms. Your fingerprint or face is your account.">
       <Card>
         <p className="text-xs text-muted">Amount waiting for you</p>
         <p className="mt-1 font-serif text-3xl">
@@ -274,7 +274,7 @@ export default function ClaimPage() {
               disabled={!secret || status === "authing"}
               onClick={() => handleAuth("login")}
             >
-              {status === "authing" ? "Checking your face…" : "Claim with passkey"}
+              {status === "authing" ? "Checking…" : "Claim with passkey"}
             </PrimaryButton>
             <SecondaryButton
               disabled={status === "authing"}
