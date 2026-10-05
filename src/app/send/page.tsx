@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useState } from "react";
 import { keccak256, toHex } from "viem";
 import { useSponsoredSend } from "@/components/useSponsoredSend";
@@ -36,6 +36,8 @@ const MAX_UINT256 = (1n << 256n) - 1n;
 export default function SendPage() {
   const router = useRouter();
   const { ready, user } = usePrivy();
+  const { wallets } = useWallets();
+  const address = (wallets ?? [])[0]?.address;
   const sponsored = useSponsoredSend();
   const [amount, setAmount] = useState("100");
   const [busy, setBusy] = useState(false);
@@ -54,6 +56,23 @@ export default function SendPage() {
     setError(null);
     try {
       const amountUnits = BigInt(Math.round(usd * 10 ** STABLECOIN_DECIMALS));
+
+      // 0. Make sure the sender can pay for its own transactions. Privy gas
+      //    sponsorship does not work on Monad testnet (AGENT.md 5.2), so a
+      //    brand-new account holding zero MON would fail on `approve`. Ask the
+      //    server for a small top-up first; it is a no-op if we already have
+      //    enough, and it fails softly so a send is never blocked outright.
+      if (address) {
+        try {
+          await fetch("/api/drip", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ address }),
+          });
+        } catch {
+          // Ignore: the send below will surface a clear error if gas is short.
+        }
+      }
 
       // 1. Approve the escrow to pull exactly this amount. Gas is sponsored,
       //    so the sender never needs to hold MON.
