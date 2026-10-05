@@ -127,6 +127,14 @@ export default function SharePage() {
             <SecondaryButton
               onClick={() => {
                 sessionStorage.removeItem(`secret:${claimId}`);
+                window.location.href = `/transfer/${claimId}`;
+              }}
+            >
+              Track this transfer
+            </SecondaryButton>
+            <SecondaryButton
+              onClick={() => {
+                sessionStorage.removeItem(`secret:${claimId}`);
                 window.location.href = "/home";
               }}
             >
