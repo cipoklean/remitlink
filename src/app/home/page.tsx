@@ -173,7 +173,7 @@ const [dripError, setDripError] = useState<string | null>(null);
           disabled={!address || dripping}
           className="mt-3 w-full rounded-full border border-line bg-white px-5 py-3 text-sm font-medium disabled:opacity-50"
         >
-          {dripping ? "Sending…" : "Add $50 test dollars"}
+          {dripping ? "Sending…" : "Add test dollars"}
         </button>
         {dripHash ? (
           <a

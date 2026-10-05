@@ -29,16 +29,17 @@ import {
  * pretending to work.
  *
  * Abuse protection (same reasoning as the relayer):
- *  - per-IP: max 3 requests / 10 minutes
- *  - per-address: one drip per TREASURY_DRIP_COOLDOWN_MS (default 1 hour), so
- *    repeated taps cannot drain the treasury
+ *  - per-IP: at most one successful drip per TREASURY_IP_COOLDOWN_MS (default
+ *    24 hours), so one judge's tap is a single, bounded handout; a burst cap of
+ *    3 requests / 10 minutes still rejects rapid-fire clicks
+ *  - per-address: one drip per TREASURY_DRIP_COOLDOWN_MS (default 1 hour)
  *  - daily cap: stop once TREASURY_DAILY_CAP_USDC has been sent, so a runaway
  *    script cannot exhaust the demo funds before judging starts
  *  - balance guards: refuse if the treasury lacks the USDC or the MON for gas
  */
 
 const DRIP_USDC = parseUnits(
-  process.env.TREASURY_DRIP_USDC ?? "50",
+  process.env.TREASURY_DRIP_USDC ?? "45",
   STABLECOIN_DECIMALS,
 );
 const MIN_NATIVE = parseUnits("0.05", 18);
@@ -49,8 +50,19 @@ const DEFAULT_COOLDOWN_MS = 60 * 60 * 1000;
 
 const ipHits = new Map<string, number[]>();
 const addressLastDrip = new Map<string, number>();
+const ipLastDrip = new Map<string, number>();
 let daySentUsdc = 0n;
 let dayStamp = 0;
+
+const DEFAULT_IP_COOLDOWN_MS = 24 * 60 * 60 * 1000; // one drip per IP per 24h
+
+function ipInCooldown(ip: string): boolean {
+  const cooldown = Number(
+    process.env.TREASURY_IP_COOLDOWN_MS ?? DEFAULT_IP_COOLDOWN_MS,
+  );
+  const last = ipLastDrip.get(ip);
+  return typeof last === "number" && Date.now() - last < cooldown;
+}
 
 function rollDay() {
   const now = Date.now();
@@ -128,6 +140,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (ipInCooldown(ip)) {
+      return NextResponse.json(
+        { error: "Test money was already sent from this device." },
+        { status: 429 },
+      );
+    }
+
     if (inCooldown(address)) {
       return NextResponse.json(
         { error: "You already received test money. Try again later." },
@@ -192,6 +211,7 @@ export async function POST(request: Request) {
 
     await publicClient.waitForTransactionReceipt({ hash });
     addressLastDrip.set(address, Date.now());
+    ipLastDrip.set(ip, Date.now());
     daySentUsdc += DRIP_USDC;
 
     return NextResponse.json({
