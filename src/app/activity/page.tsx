@@ -4,29 +4,71 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { formatUnits, parseEventLogs } from "viem";
-import {
-  Card,
-  EmptyState,
-  Loading,
-  Shell,
-} from "@/components/ui";
-import {
-  ESCROW_ADDRESS,
-  STABLECOIN_DECIMALS,
-  escrowEventsAbi,
-  explorerTx,
-  publicClient,
-} from "@/lib/chain";
+import { formatUnits } from "viem";
+import { Card, EmptyState, Loading, Shell } from "@/components/ui";
+import { STABLECOIN_DECIMALS, explorerTx } from "@/lib/chain";
+import { fetchClaims, type EnvioClaim } from "@/lib/envio";
+
+/**
+ * Activity history, read from the Envio HyperIndex (see src/lib/envio.ts for
+ * why we cannot read logs directly on Monad testnet).
+ */
 
 type Row = {
-  id: bigint;
-  kind: "sent" | "claimed" | "refunded" | "committed";
-  party: `0x${string}`;
-  amount?: bigint;
-  block: bigint;
-  hash: `0x${string}`;
+  key: string;
+  title: string;
+  detail: string;
+  hash: string;
 };
+
+function toRows(claims: EnvioClaim[], me: string): Row[] {
+  return claims
+    .filter((c) => {
+      const mine = me.toLowerCase();
+      return (
+        c.sender?.toLowerCase() === mine ||
+        (c.recipient ?? "").toLowerCase() === mine
+      );
+    })
+    .map((c) => {
+      const amount = formatUnits(BigInt(c.amount), STABLECOIN_DECIMALS);
+      const iAmSender = c.sender?.toLowerCase() === me.toLowerCase();
+      const base = `Link #${c.id} · $${amount}`;
+
+      switch (c.status) {
+        case "claimed":
+          return {
+            key: `${c.id}-claimed`,
+            title: iAmSender ? "Your money was claimed" : "You claimed money",
+            detail: base,
+            hash: c.txHash,
+          };
+        case "refunded":
+          return {
+            key: `${c.id}-refunded`,
+            title: "Money returned to you",
+            detail: base,
+            hash: c.txHash,
+          };
+        case "committed":
+          return {
+            key: `${c.id}-committed`,
+            title: iAmSender
+              ? "Waiting for the person you paid"
+              : "You committed to claim",
+            detail: base,
+            hash: c.txHash,
+          };
+        default:
+          return {
+            key: `${c.id}-created`,
+            title: iAmSender ? "You sent money" : "You created a claim",
+            detail: base,
+            hash: c.txHash,
+          };
+      }
+    });
+}
 
 export default function ActivityPage() {
   const router = useRouter();
@@ -42,86 +84,20 @@ export default function ActivityPage() {
 
   useEffect(() => {
     if (!address) return;
-    let cancelled = false;
+    const ctrl = new AbortController();
 
     (async () => {
-      try {
-        // Read events straight from the contract. Envio indexing comes later —
-        // see AGENT.md (spec 4 allows direct event reads as the fallback).
-        const rawLogs = await publicClient.getLogs({
-          address: ESCROW_ADDRESS,
-          events: escrowEventsAbi,
-          fromBlock: 0n,
-          toBlock: "latest",
-        });
-
-        const decoded = parseEventLogs({
-          abi: escrowEventsAbi,
-          logs: rawLogs,
-        });
-        const mine = (address ?? "").toLowerCase();
-        const rows: Row[] = [];
-
-        for (const log of decoded) {
-          if (log.eventName === "ClaimCreated") {
-            if (log.args.sender.toLowerCase() !== mine) continue;
-            rows.push({
-              id: log.args.claimId,
-              kind: "sent",
-              party: log.args.sender,
-              amount: log.args.amount,
-              block: log.blockNumber ?? 0n,
-              hash: log.transactionHash,
-            });
-          }
-          if (log.eventName === "RecipientCommitted") {
-            if (log.args.recipient.toLowerCase() !== mine) continue;
-            rows.push({
-              id: log.args.claimId,
-              kind: "committed",
-              party: log.args.recipient,
-              block: log.blockNumber ?? 0n,
-              hash: log.transactionHash,
-            });
-          }
-          if (log.eventName === "ClaimClaimed") {
-            if (log.args.recipient.toLowerCase() !== mine) continue;
-            rows.push({
-              id: log.args.claimId,
-              kind: "claimed",
-              party: log.args.recipient,
-              amount: log.args.amount,
-              block: log.blockNumber ?? 0n,
-              hash: log.transactionHash,
-            });
-          }
-          if (log.eventName === "ClaimRefunded") {
-            if (log.args.sender.toLowerCase() !== mine) continue;
-            rows.push({
-              id: log.args.claimId,
-              kind: "refunded",
-              party: log.args.sender,
-              amount: log.args.amount,
-              block: log.blockNumber ?? 0n,
-              hash: log.transactionHash,
-            });
-          }
-        }
-
-        rows.sort((a, b) => (a.block < b.block ? 1 : -1));
-        if (!cancelled) setRows(rows);
-      } catch (e) {
-        if (!cancelled) {
-          setError(
-            e instanceof Error ? e.message : "Could not load activity.",
-          );
-        }
+      const result = await fetchClaims(ctrl.signal);
+      if (ctrl.signal.aborted) return;
+      if (result.ok) {
+        setRows(toRows(result.claims, address));
+      } else if (result.error !== "cancelled") {
+        setError(result.error);
+        setRows([]);
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => ctrl.abort();
   }, [address]);
 
   if (!ready) {
@@ -137,30 +113,25 @@ export default function ActivityPage() {
     <Shell title="Activity" back={{ href: "/home", label: "Home" }}>
       {rows === null && !error ? (
         <Loading label="Loading your activity…" />
-      ) : rows && rows.length === 0 ? (
+      ) : rows && rows.length === 0 && !error ? (
         <EmptyState
           title="Nothing yet"
           body="Sends and claims will show up here."
         />
       ) : (
         <div className="space-y-3">
-          {rows?.map((row, i) => (
-            <Card key={`${row.kind}-${row.id}-${i}`}>
+          {rows?.map((row) => (
+            <Card key={row.key}>
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">{label(row.kind)}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    Link #{row.id.toString()}
-                    {row.amount !== undefined
-                      ? ` · $${formatUnits(row.amount, STABLECOIN_DECIMALS)}`
-                      : ""}
-                  </p>
+                  <p className="text-sm font-medium">{row.title}</p>
+                  <p className="mt-0.5 text-xs text-muted">{row.detail}</p>
                 </div>
                 <a
                   href={explorerTx(row.hash)}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs text-accent underline underline-offset-4"
+                  className="shrink-0 text-xs text-accent underline underline-offset-4"
                 >
                   Details
                 </a>
@@ -171,8 +142,9 @@ export default function ActivityPage() {
       )}
 
       {error ? (
-        <p className="mt-4 text-sm text-red-600">
-          Could not load activity: {error}
+        <p className="mt-4 text-sm text-muted">
+          Activity history isn&apos;t available right now. Your money and claims
+          are unaffected.
         </p>
       ) : null}
 
@@ -184,17 +156,4 @@ export default function ActivityPage() {
       </Link>
     </Shell>
   );
-}
-
-function label(kind: Row["kind"]): string {
-  switch (kind) {
-    case "sent":
-      return "You sent money";
-    case "committed":
-      return "You committed to claim";
-    case "claimed":
-      return "You claimed money";
-    case "refunded":
-      return "Money returned to you";
-  }
 }
