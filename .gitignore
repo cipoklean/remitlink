@@ -25,6 +25,9 @@ broadcast/
 # commits still carry it. The local copy at ~/remitlink/AGENT.md is unaffected.
 AGENT.md
 
+# audit.md - internal working doc from the 2026-10-05 full audit. Never committed.
+audit.md
+
 # Envio HyperIndex (indexer runtime state, regenerable)
 envio/generated/
 envio/node_modules/
