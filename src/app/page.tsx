@@ -14,8 +14,8 @@ import {
   formatNgn,
   formatUsd,
   quoteFee,
-  usdToNgn,
 } from "@/lib/corridor";
+import { useFxRate } from "@/lib/fx";
 import {
   Loading,
   MockBadge,
@@ -105,6 +105,7 @@ function AccountPanel() {
 
 export default function Page() {
   const { ready, user } = usePrivy();
+  const fx = useFxRate();
   const sampleUsd = 200;
 
   return (
@@ -127,9 +128,9 @@ export default function Page() {
           <p className="mx-auto mt-3 text-xs text-muted md:mx-0">
             {formatUsd(sampleUsd)} arrives as about{" "}
             <span className="font-medium text-foreground">
-              {formatNgn(usdToNgn(sampleUsd))}
+              {formatNgn(fx.toNgn(sampleUsd))}
             </span>{" "}
-            <MockBadge label="MOCK RATE" />
+            <MockBadge label={fx.isLive ? "LIVE RATE" : "SAMPLE RATE"} />
           </p>
 
           {/* Fee comparison is the pitch, so it is the hero card (audit 4B): an

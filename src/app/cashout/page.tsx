@@ -3,7 +3,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Card, Loading, MockBadge, Notice, PrimaryButton, SecondaryButton, Shell } from "@/components/ui";
-import { formatNgn, formatUsd, usdToNgn } from "@/lib/corridor";
+import { formatNgn, formatUsd } from "@/lib/corridor";
+import { useFxRate } from "@/lib/fx";
 import {
   CASH_OUT_PARTNERS,
   isValidNgnAccount,
@@ -31,7 +32,8 @@ function CashOutInner() {
   const router = useRouter();
 
   const usd = Number(params.get("usd") ?? "0") || 0;
-  const ngnGross = usdToNgn(usd);
+  const fx = useFxRate();
+  const ngnGross = fx.toNgn(usd);
   const [partner, setPartner] = useState<CashOutPartner | null>(null);
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -54,7 +56,7 @@ function CashOutInner() {
 
   // Confirmation state.
   if (done && partner) {
-    const ngnNet = ngnGross - partner.feeUsd * usdToNgn(1);
+    const ngnNet = ngnGross - partner.feeUsd * fx.toNgn(1);
     return (
       <Shell title="Almost there" back={{ href: "/home", label: "Home" }}>
         <Card>

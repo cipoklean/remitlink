@@ -16,13 +16,15 @@ import {
   escrowAbi,
   publicClient,
 } from "@/lib/chain";
-import { CORRIDOR, formatNgn, usdToNgn } from "@/lib/corridor";
+import { CORRIDOR, formatNgn } from "@/lib/corridor";
+import { useFxRate } from "@/lib/fx";
 import { copyText, type CopyResult } from "@/lib/copy";
 
 export default function SharePage() {
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
   const router = useRouter();
+  const fx = useFxRate();
   const [copied, setCopied] = useState<CopyResult | null>(null);
   const [usd, setUsd] = useState<number | null>(null);
 
@@ -96,7 +98,7 @@ export default function SharePage() {
             </p>
             {usd !== null ? (
               <p className="mt-1 text-xs text-muted">
-                About {formatNgn(usdToNgn(usd))} received
+                About {formatNgn(fx.toNgn(usd))} received
               </p>
             ) : (
               <p className="mt-1 text-xs text-muted">Link #{claimId}</p>

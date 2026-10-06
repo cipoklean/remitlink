@@ -26,8 +26,8 @@ import {
   formatNgn,
   formatUsd,
   quoteFee,
-  usdToNgn,
 } from "@/lib/corridor";
+import { useFxRate } from "@/lib/fx";
 
 export default function SendPage() {
   const router = useRouter();
@@ -35,6 +35,7 @@ export default function SendPage() {
   const { wallets } = useWallets();
   const address = (wallets ?? [])[0]?.address;
   const sponsored = useSponsoredSend();
+  const fx = useFxRate();
   // Default matches the landing page's $200 example so both screens quote the
   // identical fee figures (owner report: $10 on send read as a fee bug).
   const [amount, setAmount] = useState("200");
@@ -46,7 +47,7 @@ export default function SendPage() {
   const [step, setStep] = useState<"idle" | "locking" | "creating">("idle");
 
   const usd = Number(amount) > 0 ? Number(amount) : 0;
-  const ngn = usdToNgn(usd);
+  const ngn = fx.toNgn(usd);
   const remitFee = quoteFee(FEE_QUOTES[0], usd);
   const wireFee = quoteFee(FEE_QUOTES[1], usd);
   const serviceFee = quoteFee(FEE_QUOTES[2], usd);
@@ -157,7 +158,7 @@ export default function SendPage() {
         <p className="mt-3 text-sm text-muted">
           They receive about{" "}
           <span className="font-medium text-foreground">{formatNgn(ngn)}</span>{" "}
-          <MockBadge label="MOCK RATE" />
+          <MockBadge label={fx.isLive ? "LIVE RATE" : "SAMPLE RATE"} />
         </p>
       </Card>
 

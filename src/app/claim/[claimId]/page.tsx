@@ -26,7 +26,8 @@ import {
   escrowAbi,
   publicClient,
 } from "@/lib/chain";
-import { formatNgn, usdToNgn } from "@/lib/corridor";
+import { formatNgn } from "@/lib/corridor";
+import { useFxRate } from "@/lib/fx";
 
 type ClaimData = {
   amount: bigint;
@@ -62,6 +63,7 @@ export default function ClaimPage() {
   const { createWallet } = useCreateWallet();
 
   const sponsored = useSponsoredSend();
+  const fx = useFxRate();
   const address = sponsored.address;
 
   // The secret lives in the URL fragment, which browsers never transmit. Read it
@@ -249,7 +251,7 @@ export default function ClaimPage() {
           {claim ? `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "-"}
         </p>
         <p className="mt-1 text-xs text-muted">
-          {claim ? `About ${formatNgn(usdToNgn(usd))} received` : "Checking…"}
+          {claim ? `About ${formatNgn(fx.toNgn(usd))} received` : "Checking…"}
         </p>
         {expired ? (
           <p className="mt-2 text-xs text-red-600">
