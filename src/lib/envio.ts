@@ -12,9 +12,27 @@
  *   hosted    : https://<your-indexer>.envio.run
  */
 
+// Trim so a trailing newline from a paste does not break fetch. (The value
+// must still be a clean URL - no surrounding quotes or interior spaces, which
+// a JSON-pasted value like "https://... " carries; see .env.example.)
+const rawEnv = process.env.NEXT_PUBLIC_ENVIO_GRAPHQL_URL?.trim();
 export const ENVIO_GRAPHQL_URL =
-  process.env.NEXT_PUBLIC_ENVIO_GRAPHQL_URL ??
-  "http://localhost:8080/v1/graphql";
+  rawEnv || "http://localhost:8080/v1/graphql";
+
+/**
+ * A short, human-readable identity of the endpoint we are hitting, so a
+ * failure message tells you WHICH endpoint broke instead of a generic
+ * "unreachable". Falls back to the raw value (JSON-shown) when it is not a
+ * parseable URL - which is exactly how a malformed value is caught in seconds
+ * instead of an afternoon.
+ */
+function describeEndpoint(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return JSON.stringify(url).slice(0, 80);
+  }
+}
 
 export type EnvioClaim = {
   id: string;
@@ -44,6 +62,20 @@ export type EnvioResult =
   | { ok: false; error: string };
 
 export async function fetchClaims(signal?: AbortSignal): Promise<EnvioResult> {
+  // Validate the endpoint up front. A malformed NEXT_PUBLIC_ENVIO_GRAPHQL_URL
+  // (e.g. pasted from JSON with surrounding quotes or an interior space) would
+  // otherwise make fetch() throw "Invalid URL" and render as a vague
+  // "could not reach the activity indexer". Catching it here turns that into
+  // an actionable message in seconds.
+  try {
+    new URL(ENVIO_GRAPHQL_URL);
+  } catch {
+    return {
+      ok: false,
+      error: `the activity indexer URL is not a valid URL: ${JSON.stringify(ENVIO_GRAPHQL_URL)}`,
+    };
+  }
+
   try {
     const res = await fetch(ENVIO_GRAPHQL_URL, {
       method: "POST",
@@ -73,7 +105,10 @@ export async function fetchClaims(signal?: AbortSignal): Promise<EnvioResult> {
     }
     return {
       ok: false,
-      error: "could not reach the activity indexer",
+      // Naming the endpoint makes a misconfigured URL obvious at a glance
+      // (a malformed NEXT_PUBLIC_ENVIO_GRAPHQL_URL shows up here as the
+      // raw string instead of a vague "unreachable").
+      error: `could not reach the activity indexer at ${describeEndpoint(ENVIO_GRAPHQL_URL)}`,
     };
   }
 }
