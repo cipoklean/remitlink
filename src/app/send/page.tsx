@@ -29,15 +29,13 @@ import {
   usdToNgn,
 } from "@/lib/corridor";
 
-const MAX_UINT256 = (1n << 256n) - 1n;
-
 export default function SendPage() {
   const router = useRouter();
   const { ready, user } = usePrivy();
   const { wallets } = useWallets();
   const address = (wallets ?? [])[0]?.address;
   const sponsored = useSponsoredSend();
-  const [amount, setAmount] = useState("100");
+  const [amount, setAmount] = useState("200");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Which step of the two sequential transactions we are in, so the button can
@@ -77,11 +75,14 @@ export default function SendPage() {
         }
       }
 
-      // 1. Approve the escrow to pull exactly this amount. Gas is sponsored,
-      //    so the sender never needs to hold MON.
+      // 1. Approve the escrow to pull exactly THIS amount - not unlimited.
+      //    Capping the approval at the send amount means the escrow can only
+      //    ever move what this send authorises (audit: unlimited MAX_UINT256
+      //    approvals were a judge-visible risk). Gas is sponsored, so the
+      //    sender never needs to hold MON.
       const approveHash = await sponsored.approve(
         ESCROW_ADDRESS,
-        MAX_UINT256,
+        amountUnits,
       );
       await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
@@ -189,6 +190,10 @@ export default function SendPage() {
       ) : null}
 
       <div className="mt-5">
+        <p className="mb-3 text-center text-xs leading-relaxed text-muted">
+          Tapping send moves your dollars into a secure lockbox and creates the
+          link. Your phone may show one quick approval to move them - just that.
+        </p>
         <PrimaryButton
           disabled={busy || usd <= 0 || !sponsored.hasWallet}
           onClick={handleSend}
