@@ -95,7 +95,15 @@ function CashOutInner() {
         </dl>
 
         <div className="mt-5">
-          <PrimaryButton onClick={() => router.push("/home")}>
+          <PrimaryButton
+            onClick={() => {
+              // "Done" returns the user to the hub. Replace (not push) so Home
+              // stays the single root frame instead of stacking on the task
+              // trail; otherwise the native back button re-walks a stale chain
+              // of prior screens back to login.
+              router.replace("/home");
+            }}
+          >
             Done
           </PrimaryButton>
         </div>

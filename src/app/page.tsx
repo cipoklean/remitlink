@@ -80,11 +80,20 @@ function SignInPanel() {
 }
 
 function AccountPanel() {
+  const router = useRouter();
   const { logout } = usePrivy();
   return (
     <div className="flex flex-col gap-3">
       <Link
         href="/home"
+        onClick={(e) => {
+          // The landing is the app's entry point. Moving from it to the hub
+          // must consume the entry frame (replace) rather than stack another
+          // on it, otherwise the native back button walks login -> home ->
+          // login ... and feels like it "never ends".
+          e.preventDefault();
+          router.replace("/home");
+        }}
         className="w-full rounded-full bg-accent px-5 py-3.5 text-center text-sm font-medium text-white"
       >
         Open RemitLink
@@ -99,66 +108,85 @@ export default function Page() {
   const sampleUsd = 200;
 
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center px-5 py-10">
-      <div className="text-center">
-        <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
-          {CORRIDOR.label}
-        </p>
-        <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight">
-          Send money home
-          <br />
-          <span className="italic text-accent">without the runaround.</span>
-        </h1>
-        <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted">
-          Sign in with your fingerprint or face. Send dollars. Share one link.
-          They claim it with their own passkey - no account, no app, no forms.
-        </p>
-        <p className="mx-auto mt-3 text-xs text-muted">
-          {formatUsd(sampleUsd)} arrives as about{" "}
-          <span className="font-medium text-foreground">
-            {formatNgn(usdToNgn(sampleUsd))}
-          </span>{" "}
-          <MockBadge label="MOCK RATE" />
-        </p>
-      </div>
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center px-5 py-10 md:max-w-5xl md:px-10 lg:px-14">
+      <div className="grid items-center gap-10 md:grid-cols-[1.1fr_0.9fr] md:gap-16">
+        {/* Pitch: centered on mobile, left-aligned on desktop. */}
+        <div className="text-center md:text-left">
+          <p className="text-xs font-medium tracking-[0.18em] text-muted uppercase">
+            {CORRIDOR.label}
+          </p>
+          <h1 className="mt-3 font-serif text-4xl leading-tight tracking-tight md:text-5xl">
+            Send money home
+            <br />
+            <span className="italic text-accent">without the runaround.</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-muted md:mx-0">
+            Sign in with your fingerprint or face. Send dollars. Share one link.
+            They claim it with their own passkey - no account, no app, no forms.
+          </p>
+          <p className="mx-auto mt-3 text-xs text-muted md:mx-0">
+            {formatUsd(sampleUsd)} arrives as about{" "}
+            <span className="font-medium text-foreground">
+              {formatNgn(usdToNgn(sampleUsd))}
+            </span>{" "}
+            <MockBadge label="MOCK RATE" />
+          </p>
 
-      {/* Fee comparison is the pitch, so it is the hero card (audit 4B): an
-          accent-soft fill and slightly more presence than the surrounding UI,
-          and the example above is demoted to a one-line figure. */}
-      <div className="mt-6 rounded-2xl border border-accent/15 bg-accent-soft p-5">
-        <p className="text-xs font-medium text-accent">
-          Sending {formatUsd(sampleUsd)} today
-        </p>
-        <div className="mt-2 space-y-1.5">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm text-muted">Typical bank wire</span>
-            <span className="font-mono text-sm text-muted line-through">
-              {formatUsd(quoteFee(FEE_QUOTES[1], sampleUsd))}
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm font-medium">With RemitLink</span>
-            <span className="font-mono text-lg font-semibold text-accent">
-              {formatUsd(quoteFee(FEE_QUOTES[0], sampleUsd))}
-            </span>
+          {/* Fee comparison is the pitch, so it is the hero card (audit 4B): an
+              accent-soft fill and slightly more presence than the surrounding UI,
+              and the example above is demoted to a one-line figure. */}
+          <div className="mt-6 rounded-2xl border border-accent/15 bg-accent-soft p-5 text-left">
+            <p className="text-xs font-medium text-accent">
+              Sending {formatUsd(sampleUsd)} today
+            </p>
+            <div className="mt-2 space-y-1.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm text-muted">Typical bank wire</span>
+                <span className="font-mono text-sm text-muted line-through">
+                  {formatUsd(quoteFee(FEE_QUOTES[1], sampleUsd))}
+                </span>
+              </div>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-sm font-medium">With RemitLink</span>
+                <span className="font-mono text-lg font-semibold text-accent">
+                  {formatUsd(quoteFee(FEE_QUOTES[0], sampleUsd))}
+                </span>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-muted">
+              You save about{" "}
+              <span className="font-medium text-accent">
+                {formatUsd(
+                  Math.max(
+                    0,
+                    quoteFee(FEE_QUOTES[1], sampleUsd) -
+                      quoteFee(FEE_QUOTES[0], sampleUsd),
+                  ),
+                )}
+              </span>{" "}
+              · typical fees, illustrative
+            </p>
           </div>
         </div>
-        <p className="mt-3 text-xs text-muted">
-          You save about{" "}
-          <span className="font-medium text-accent">
-            {formatUsd(
-              Math.max(
-                0,
-                quoteFee(FEE_QUOTES[1], sampleUsd) -
-                  quoteFee(FEE_QUOTES[0], sampleUsd),
-              ),
-            )}
-          </span>{" "}
-          · typical fees, illustrative
-        </p>
-      </div>
 
-      <div className="mt-6">{!ready ? <Loading /> : user ? <AccountPanel /> : <SignInPanel />}</div>
+        {/* Auth: a calm card on desktop (the panel already styles its buttons). */}
+        <div className="md:pl-2">
+          <div className="rounded-2xl border border-line bg-white/70 p-5 md:p-6">
+            <h2 className="font-serif text-2xl leading-tight tracking-tight">
+              {user ? "Welcome back" : "Get in"}
+            </h2>
+            <div className="mt-5">
+              {!ready ? (
+                <Loading label="Getting things ready..." />
+              ) : user ? (
+                <AccountPanel />
+              ) : (
+                <SignInPanel />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

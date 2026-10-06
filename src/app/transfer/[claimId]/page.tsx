@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
 import {
@@ -68,6 +68,7 @@ function Missing() {
 }
 
 export default function TransferPage() {
+  const router = useRouter();
   const params = useParams<{ claimId: string }>();
   const claimId = params?.claimId ?? "";
   const [state, setState] = useState<State | null>(null);
@@ -303,7 +304,16 @@ export default function TransferPage() {
         >
           View on the explorer
         </a>
-        <Link href="/home" className="underline underline-offset-4">
+        <Link
+          href="/home"
+          onClick={(e) => {
+            // Return to the hub by replacing this spoke's frame so the native
+            // back button doesn't re-walk a stale trail back to login.
+            e.preventDefault();
+            router.replace("/home");
+          }}
+          className="underline underline-offset-4"
+        >
           Back home
         </Link>
       </div>

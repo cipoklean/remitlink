@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function Shell({
   title,
@@ -13,11 +14,21 @@ export function Shell({
   children: React.ReactNode;
   back?: { href: string; label: string };
 }) {
+  const router = useRouter();
   return (
-    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 py-8">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-5 py-8 md:max-w-2xl md:px-8">
       {back ? (
         <Link
           href={back.href}
+          onClick={(e) => {
+            // The hub is the root of the app. A spoke's "back" should pop the
+            // spoke off the stack (replace it with the hub) rather than pile
+            // yet another frame on, otherwise the native back button re-walks a
+            // stale trail (spoke -> earlier hub -> ... -> login) and feels like
+            // it "never ends".
+            e.preventDefault();
+            router.replace(back.href);
+          }}
           className="mb-6 text-sm text-muted underline-offset-4 hover:underline"
         >
           ← {back.label}

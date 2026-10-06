@@ -136,7 +136,11 @@ export default function SharePage() {
             <SecondaryButton
               onClick={() => {
                 sessionStorage.removeItem(`secret:${claimId}`);
-                router.push("/home");
+                // "Done" returns the user to the hub. Replace (not push) so
+                // Home stays the single root frame instead of stacking on the
+                // task trail; otherwise the native back button re-walks a stale
+                // chain of prior screens back to login.
+                router.replace("/home");
               }}
             >
               Done
