@@ -373,5 +373,9 @@ function friendlyError(message: unknown): string {
   if (/ClaimSettled/i.test(m)) return "This link has already been claimed.";
   if (/insufficient funds|gas/i.test(m))
     return "Not enough test MON to pay for this step.";
-  return m.length > 220 ? `${m.slice(0, 220)}…` : m;
+  // Unmapped error: show a calm catch-all instead of the raw viem/SDK text
+  // (a bare "execution reverted / 0x…" on screen reads as broken). The raw
+  // message is still logged so it is not lost when debugging.
+  console.warn("[remitlink] unmapped error surfaced to user:", m);
+  return "Something went wrong on this step. Your money is safe and the link is unchanged, so you can try again.";
 }
