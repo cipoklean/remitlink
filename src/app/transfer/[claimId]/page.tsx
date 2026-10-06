@@ -295,6 +295,25 @@ export default function TransferPage() {
         </Card>
       )}
 
+      {claimed ? (
+        <Card className="mt-4">
+          <div className="flex items-center gap-2">
+            <MockBadge label="MOCK" />
+            <span className="text-xs text-muted">
+              Demo - see this money land in a Nigerian bank
+            </span>
+          </div>
+          <Link
+            href={`/cashout?usd=${Number(
+              formatUnits(state.amount, STABLECOIN_DECIMALS),
+            ).toFixed(2)}`}
+            className="mt-3 block w-full rounded-full border border-line bg-white px-5 py-3 text-center text-sm font-medium"
+          >
+            Cash out to a Nigerian bank
+          </Link>
+        </Card>
+      ) : null}
+
       <div className="mt-5 flex flex-col gap-2 text-center text-xs text-muted">
         <a
           href={explorerAddress(state.sender)}

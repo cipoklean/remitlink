@@ -301,6 +301,24 @@ const [claimError, setClaimError] = useState<string | null>(null);
           </p>
         )}
       </Card>
+
+      {/* Demo entry point for the cash-out story. It was previously only
+          reachable from the claim screen, so a judge on the home hub had no
+          hint it existed (owner report). Kept discreet and clearly MOCK. */}
+      <Card className="mt-4">
+        <div className="flex items-center gap-2">
+          <MockBadge label="MOCK" />
+          <span className="text-xs text-muted">
+            Demo - see how the money lands in a Nigerian bank
+          </span>
+        </div>
+        <Link
+          href="/cashout?usd=200"
+          className="mt-3 block w-full rounded-full border border-line bg-white px-5 py-3 text-center text-sm font-medium transition-opacity active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none"
+        >
+          See cash out to a Nigerian bank
+        </Link>
+      </Card>
     </Shell>
   );
 }
