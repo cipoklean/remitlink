@@ -225,10 +225,16 @@ export default function ClaimPage() {
 
   if (claim?.settled) {
     return (
-      <Shell title="Already claimed">
+      <Shell title="Already claimed" back={{ href: "/", label: "RemitLink home" }}>
         <Notice tone="success">
           This link has been used. If that was not you, contact the sender.
         </Notice>
+        <Link
+          href="/"
+          className="mt-5 block text-center text-xs text-muted underline-offset-4 hover:underline"
+        >
+          Back to RemitLink
+        </Link>
       </Shell>
     );
   }

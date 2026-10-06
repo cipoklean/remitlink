@@ -173,7 +173,7 @@ export default function Page() {
         <div className="md:pl-2">
           <div className="rounded-2xl border border-line bg-white/70 p-5 md:p-6">
             <h2 className="font-serif text-2xl leading-tight tracking-tight">
-              {user ? "Welcome back" : "Get in"}
+              {user ? "Your account" : "Get in"}
             </h2>
             <div className="mt-5">
               {!ready ? (

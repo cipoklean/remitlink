@@ -35,6 +35,8 @@ export default function SendPage() {
   const { wallets } = useWallets();
   const address = (wallets ?? [])[0]?.address;
   const sponsored = useSponsoredSend();
+  // Default matches the landing page's $200 example so both screens quote the
+  // identical fee figures (owner report: $10 on send read as a fee bug).
   const [amount, setAmount] = useState("200");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

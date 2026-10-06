@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCreateWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { Card, Loading, MockBadge, Shell } from "@/components/ui";
 import {
@@ -18,7 +18,7 @@ import { copyText, type CopyResult } from "@/lib/copy";
 
 export default function HomePage() {
   const router = useRouter();
-  const { ready, user } = usePrivy();
+  const { ready, user, logout } = usePrivy();
   const { wallets } = useWallets();
   const { createWallet } = useCreateWallet();
   const [balance, setBalance] = useState<string | null>(null);
@@ -69,8 +69,23 @@ const [claimError, setClaimError] = useState<string | null>(null);
     };
   }, [ready, user, address]);
 
+  // Auto-provision the embedded wallet so a brand-new account never lands on the
+  // "no sending address yet" screen. createWallet() is idempotent, and the claim
+  // page already relies on the same call. Guarded by a ref so React StrictMode's
+  // double-invoke in dev can't fire it twice.
+  const autoCreatedRef = useRef(false);
+  useEffect(() => {
+    if (!ready || !user || address || autoCreatedRef.current) return;
+    autoCreatedRef.current = true;
+    createWallet().catch((e: unknown) =>
+      setError(e instanceof Error ? e.message : "Could not set up your account"),
+    );
+  }, [ready, user, address, createWallet]);
+
   // Users who signed in before embedded-wallet creation was enabled have no
-  // wallet. Offer to create one rather than silently rendering nothing.
+  // wallet. Offer to create one rather than silently rendering nothing. (The
+  // auto-create effect above usually removes the need for this screen; it stays
+  // as a fallback if that call fails.)
   if (ready && user && !address) {
     return (
       <Shell
@@ -148,6 +163,13 @@ const [claimError, setClaimError] = useState<string | null>(null);
         <div className="mt-2 flex items-center gap-2">
           <MockBadge label="TEST BALANCE" />
           <span className="text-xs text-muted">Demo funds - not real money</span>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="ml-auto text-xs text-muted underline-offset-4 hover:underline"
+          >
+            Sign out
+          </button>
         </div>
         {error ? (
           <p className="mt-2 text-xs text-red-600">Could not read balance: {error}</p>
@@ -156,10 +178,9 @@ const [claimError, setClaimError] = useState<string | null>(null);
 
       {/* Test-money drip (AGENT.md 7b A1). Testnet USDC only, labeled as such. */}
       <Card className="mt-4">
-        <div className="flex items-center gap-2">
-          <MockBadge label="TEST MONEY" />
-          <span className="text-xs text-muted">Testnet only - not real money</span>
-        </div>
+        <span className="text-xs text-muted">
+          Testnet only - not real money
+        </span>
         <button
           type="button"
           onClick={async () => {
