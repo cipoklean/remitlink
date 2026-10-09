@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RemitLink — Send money home with a link</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400&display=swap"
+    />
+    <link rel="stylesheet" href="/landing/hark.css" />
+    <link rel="stylesheet" href="/landing/hark-hero.css" />
+    <style>
+      .x-faq { border-top: 1px solid var(--stroke-secondary); }
+      .x-faq details { border-bottom: 1px solid var(--stroke-secondary); }
+      .x-faq summary {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        min-height: var(--tap); padding: 18px 4px; cursor: pointer; list-style: none;
+        font: var(--type-heading); color: var(--text-primary);
+      }
+      .x-faq summary::-webkit-details-marker { display: none; }
+      .x-faq summary::after {
+        content: "+"; flex: none; display: grid; place-items: center;
+        width: 32px; height: 32px; border-radius: var(--r-pill);
+        background: var(--fill-tertiary); font: var(--type-body); color: var(--text-secondary);
+        transition: transform var(--dur-quick) var(--ease-out);
+      }
+      .x-faq details[open] summary::after { transform: rotate(45deg); }
+      .x-faq summary:focus-visible { outline: 2px solid var(--stroke-primary); outline-offset: 2px; border-radius: var(--r-s); }
+      .x-faq p { max-width: 62ch; padding: 0 4px 20px; font: var(--type-body); color: var(--text-secondary); }
+      .hero .x-cta { font: var(--type-display); letter-spacing: 0; }
+      @media (prefers-reduced-motion: reduce) { .x-faq summary::after { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="top">
+      <header class="nav glass" data-auto></header>
+      <main class="main">
+        <section class="hero">
+          <img class="hero__img" src="/landing/hero.jpg" alt="A young woman on a Lagos street at golden hour, smiling at her phone" />
+          <div class="hero__copy">
+            <p class="hero__eyebrow">RemitLink · Built on Monad</p>
+            <h1>Send money home with a link.</h1>
+            <p class="hero__sub">No bank details. No app downloads. No seed phrases. Share a link on WhatsApp — your family claims it with a fingerprint.</p>
+            <div class="links">
+              <a class="btn" href="/?app=1">Try the app</a>
+              <a class="btn" href="https://github.com/cipoklean/remitlink" target="_blank" rel="noopener">View on GitHub</a>
+            </div>
+          </div>
+          <p class="hero__credit">US → Nigeria, one link at a time · Testnet demo, no real money</p>
+        </section>
+
+        <section class="section" id="problem" data-nav="Problem">
+          <div class="head">
+            <p class="head__eyebrow">The problem</p>
+            <h2>Sending money home is still harder than it should be.</h2>
+          </div>
+          <div class="cards">
+            <div>
+              <h3>Slow</h3>
+              <p>Traditional transfers can take days to land.</p>
+            </div>
+            <div>
+              <h3>Expensive</h3>
+              <p>Fees and FX spreads eat into what your family receives.</p>
+            </div>
+            <div>
+              <h3>Complicated</h3>
+              <p>Recipients need bank details, accounts, or crypto wallets just to receive.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="how" data-nav="How it works">
+          <div class="head">
+            <p class="head__eyebrow">How it works</p>
+            <h2>Five steps, and your family only does two.</h2>
+            <p class="head__sub">You create and share. They open and claim.</p>
+          </div>
+          <div class="steps">
+            <article class="step">
+              <div class="step__intro"><p class="step__num">01</p><p class="step__eyebrow">You</p></div>
+              <div><h3>Create a RemitLink</h3><p>Enter an amount and create the link.</p></div>
+            </article>
+            <article class="step">
+              <div class="step__intro"><p class="step__num">02</p><p class="step__eyebrow">On-chain</p></div>
+              <div><h3>Funds lock in escrow</h3><p>The money sits in an on-chain claim escrow on Monad until it's claimed.</p></div>
+            </article>
+            <article class="step">
+              <div class="step__intro"><p class="step__num">03</p><p class="step__eyebrow">You</p></div>
+              <div><h3>Share the link</h3><p>WhatsApp, SMS, anywhere you already talk.</p></div>
+            </article>
+            <article class="step">
+              <div class="step__intro"><p class="step__num">04</p><p class="step__eyebrow">Your family</p></div>
+              <div><h3>Open and sign in with a passkey</h3><p>Face ID or fingerprint. No password, no seed phrase.</p></div>
+            </article>
+            <article class="step">
+              <div class="step__intro"><p class="step__num">05</p><p class="step__eyebrow">Your family</p></div>
+              <div><h3>Claim in seconds</h3><p>The funds are theirs.</p></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="why" data-nav="Why us">
+          <div class="head">
+            <p class="head__eyebrow">Why it's different</p>
+            <h2>The link is the transfer.</h2>
+          </div>
+          <div class="cards">
+            <div><h3>Passkey sign-in</h3><p>Device biometrics. Nothing to remember.</p></div>
+            <div><h3>Claim links</h3><p>The link is the transfer. Send it like any message.</p></div>
+            <div><h3>On-chain escrow</h3><p>Unclaimed funds return to the sender when the link expires.</p></div>
+            <div><h3>Built for US → Nigeria</h3><p>Designed around one corridor and the families who use it.</p></div>
+            <div><h3>Settles on Monad</h3><p>Fast, low-cost settlement.</p></div>
+          </div>
+        </section>
+
+        <section class="section" id="for" data-nav="Built for">
+          <div class="head">
+            <p class="head__eyebrow">Built for</p>
+            <h2>For the people who hold families together from far away.</h2>
+          </div>
+          <div class="cards">
+            <div>
+              <p class="quote">For the nurse in Houston sending school fees to Enugu.</p>
+            </div>
+            <div>
+              <p class="quote">For the student in New Jersey helping mum in Lagos.</p>
+            </div>
+          </div>
+          <div class="prose">
+            <p>They shouldn't have to explain bank codes or wallet addresses to the people they love. With RemitLink, they send a message, and the money arrives.</p>
+          </div>
+        </section>
+
+        <section class="section" id="tech" data-nav="Tech">
+          <div class="head">
+            <p class="head__eyebrow">Under the hood</p>
+            <h2>A small, focused stack.</h2>
+            <p class="head__sub">For judges and developers.</p>
+          </div>
+          <div class="pair">
+            <div class="breakdown">
+              <dl>
+                <div class="row"><dt>Smart contract <small>Holds and releases funds</small></dt><dd>ClaimEscrow on Monad</dd></div>
+                <div class="row"><dt>Auth <small>Device biometrics</small></dt><dd>WebAuthn passkeys</dd></div>
+                <div class="row"><dt>Frontend</dt><dd>Next.js on Vercel</dd></div>
+              </dl>
+            </div>
+            <aside class="callout" aria-label="Hackathon track">
+              <p class="callout__head">Track</p>
+              <p class="callout__lead"><strong>Monad Metropolis.</strong> Consumer Products &amp; Payments.</p>
+              <a class="btn" href="https://github.com/cipoklean/remitlink" target="_blank" rel="noopener">Read the code</a>
+            </aside>
+          </div>
+        </section>
+
+        <section class="section" id="faq" data-nav="FAQ">
+          <div class="head">
+            <p class="head__eyebrow">FAQ</p>
+            <h2>Questions, answered.</h2>
+          </div>
+          <div class="x-faq">
+            <details>
+              <summary>Does my family need a crypto wallet?</summary>
+              <p>No. A passkey on their phone is enough.</p>
+            </details>
+            <details>
+              <summary>What if the link isn't claimed?</summary>
+              <p>The escrow returns the funds to the sender after the link expires.</p>
+            </details>
+            <details>
+              <summary>Is this live?</summary>
+              <p>RemitLink is a hackathon build running on the Monad <strong>testnet</strong> — demo funds, no real money. Try it at <a class="link" href="/?app=1">remitlink.vercel.app</a>.</p>
+            </details>
+          </div>
+        </section>
+
+        <section class="section" id="start">
+          <section class="hero">
+            <div class="hero__copy">
+              <h2 class="x-cta">Your family is one link away.</h2>
+              <p class="hero__sub">No bank details, no downloads, no seed phrases.</p>
+              <div class="links">
+                <a class="btn" href="/?app=1">Try RemitLink</a>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+      <footer class="foot">
+        <p>RemitLink — built by cipoklean.</p>
+        <nav aria-label="Project links">
+          <a class="link" href="/?app=1">App</a>
+          <a class="link" href="https://github.com/cipoklean/remitlink" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+      </footer>
+    </div>
+    <script src="/landing/hark.js"></script>
+  </body>
+</html>
