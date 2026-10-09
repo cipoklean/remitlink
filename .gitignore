@@ -28,6 +28,11 @@ AGENT.md
 # audit.md - internal working doc from the 2026-10-05 full audit. Never committed.
 audit.md
 
+# docs/ - internal working notes and recording directions (demo-video script,
+# shot lists). Author-facing, not part of the submission repo; stage directions
+# like "never say wallet on camera" read oddly to judges reviewing the repo.
+docs/
+
 # Envio HyperIndex (indexer runtime state, regenerable)
 envio/generated/
 envio/node_modules/
