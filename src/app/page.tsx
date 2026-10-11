@@ -186,6 +186,13 @@ export default function Page() {
               )}
             </div>
           </div>
+          <p className="mt-4 text-center text-xs text-muted">
+            {/* Full page load on purpose: the proxy serves the static landing. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/?landing=1" className="underline underline-offset-2">
+              What is RemitLink?
+            </a>
+          </p>
         </div>
       </div>
     </main>
