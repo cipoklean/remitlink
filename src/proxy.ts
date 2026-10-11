@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // visit shows the landing again. "/?landing=1" forgets the choice.
 // The cookie was renamed from "rl_app" (which had a 30-day maxAge) so browsers
 // still holding the old long-lived cookie get the landing again.
-// Claim and send routes are untouched: the matcher is "/" only.
+// App routes only get the session cookie set; nothing else changes there.
 const COOKIE = "rl_session_app";
 
 function landing(req: NextRequest) {
@@ -17,7 +17,15 @@ function landing(req: NextRequest) {
 }
 
 export function proxy(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
+  const { pathname, searchParams } = req.nextUrl;
+
+  // Any app screen marks the session as "in the app", so in-app links and
+  // sign-out back to "/" stay in the app instead of bouncing to the landing.
+  if (pathname !== "/") {
+    const res = NextResponse.next();
+    if (!req.cookies.get(COOKIE)) res.cookies.set(COOKIE, "1", { path: "/" });
+    return res;
+  }
 
   if (searchParams.has("landing")) return landing(req);
   if (searchParams.has("app")) {
@@ -26,14 +34,19 @@ export function proxy(req: NextRequest) {
     return res;
   }
   if (req.cookies.get(COOKIE)) return NextResponse.next();
-  // In-app client navigations to "/" (sign out, back links) fetch an RSC
-  // payload, not HTML. Keep those in the app; only full page loads get the
-  // landing.
-  if (req.headers.get("rsc") || req.headers.get("next-router-prefetch")) {
-    return NextResponse.next();
-  }
 
   return landing(req);
 }
 
-export const config = { matcher: ["/"] };
+export const config = {
+  matcher: [
+    "/",
+    "/home",
+    "/send",
+    "/activity",
+    "/cashout",
+    "/claim/:path*",
+    "/share/:path*",
+    "/transfer/:path*",
+  ],
+};
