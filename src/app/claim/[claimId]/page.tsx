@@ -230,7 +230,9 @@ export default function ClaimPage() {
     );
   }
 
-  if (claim?.settled) {
+  // After a successful claim we reload the claim, which is now settled. Keep
+  // the success screen instead of flipping to "Already claimed".
+  if (claim?.settled && status !== "done") {
     return (
       <Shell title="Already claimed" back={{ href: "/", label: "RemitLink home" }}>
         <Notice tone="success">
