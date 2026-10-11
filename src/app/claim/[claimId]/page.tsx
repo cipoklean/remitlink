@@ -28,6 +28,7 @@ import {
 } from "@/lib/chain";
 import { formatNgn } from "@/lib/corridor";
 import { useFxRate } from "@/lib/fx";
+import { ensureEmbeddedWallet } from "@/lib/wallet";
 
 type ClaimData = {
   amount: bigint;
@@ -180,7 +181,11 @@ export default function ClaimPage() {
       try {
         if (!address) {
           setStatus("wallet");
-          await createWallet();
+          // Privy may already be provisioning the wallet (createOnLogin), in
+          // which case createWallet() throws "already has an embedded wallet".
+          // That is fine: stay in "wallet" and the effect below runs the claim
+          // as soon as useWallets() surfaces the address.
+          await ensureEmbeddedWallet(createWallet);
           if (cancelled) return;
         }
       } catch (e) {

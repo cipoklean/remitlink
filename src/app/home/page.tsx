@@ -15,14 +15,16 @@ import {
 } from "@/lib/chain";
 import { CORRIDOR } from "@/lib/corridor";
 import { copyText, type CopyResult } from "@/lib/copy";
+import { ensureEmbeddedWallet } from "@/lib/wallet";
 
 export default function HomePage() {
   const router = useRouter();
   const { ready, user, logout } = usePrivy();
-  const { wallets } = useWallets();
+  const { wallets, ready: walletsReady } = useWallets();
   const { createWallet } = useCreateWallet();
   const [balance, setBalance] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [setupError, setSetupError] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyResult | null>(null);
   const [creating, setCreating] = useState(false);
 const [dripping, setDripping] = useState(false);
@@ -69,24 +71,31 @@ const [claimError, setClaimError] = useState<string | null>(null);
     };
   }, [ready, user, address]);
 
-  // Auto-provision the embedded wallet so a brand-new account never lands on the
-  // "no sending address yet" screen. createWallet() is idempotent, and the claim
-  // page already relies on the same call. Guarded by a ref so React StrictMode's
-  // double-invoke in dev can't fire it twice.
+  // Privy is configured with createOnLogin: "all-users", so the embedded wallet
+  // is normally provisioned by Privy itself. useWallets() hydrates a beat after
+  // usePrivy() is ready, so an empty `wallets` array does NOT mean "no wallet".
+  // Only fall back to createWallet() once the wallet list has loaded AND the
+  // user record has no embedded wallet, and treat Privy's "already has an
+  // embedded wallet" as success (it is a race, not a failure).
   const autoCreatedRef = useRef(false);
   useEffect(() => {
-    if (!ready || !user || address || autoCreatedRef.current) return;
+    if (!ready || !user || !walletsReady || address || user.wallet) return;
+    if (autoCreatedRef.current) return;
     autoCreatedRef.current = true;
-    createWallet().catch((e: unknown) =>
-      setError(e instanceof Error ? e.message : "Could not set up your account"),
+    ensureEmbeddedWallet(createWallet).catch((e: unknown) =>
+      setSetupError(e instanceof Error ? e.message : "Could not set up your account"),
     );
-  }, [ready, user, address, createWallet]);
+  }, [ready, user, walletsReady, address, createWallet]);
 
   // Users who signed in before embedded-wallet creation was enabled have no
   // wallet. Offer to create one rather than silently rendering nothing. (The
   // auto-create effect above usually removes the need for this screen; it stays
   // as a fallback if that call fails.)
-  if (ready && user && !address) {
+  if (!ready || (user && !walletsReady)) {
+    return <Shell title="RemitLink"><Loading /></Shell>;
+  }
+
+  if (ready && user && !address && !user.wallet) {
     return (
       <Shell
         title="Finish setting up"
@@ -102,9 +111,9 @@ const [claimError, setClaimError] = useState<string | null>(null);
             type="button"
             onClick={() => {
               setCreating(true);
-              createWallet()
+              ensureEmbeddedWallet(createWallet)
                 .catch((e: unknown) =>
-                  setError(
+                  setSetupError(
                     e instanceof Error ? e.message : "Could not create account",
                   ),
                 )
@@ -115,8 +124,8 @@ const [claimError, setClaimError] = useState<string | null>(null);
           >
             {creating ? "Setting up…" : "Set up my account"}
           </button>
-          {error ? (
-            <p className="mt-2 text-xs text-red-600">{error}</p>
+          {setupError ? (
+            <p className="mt-2 text-xs text-red-600">{setupError}</p>
           ) : null}
         </Card>
         <p className="mt-4 text-xs text-muted">
